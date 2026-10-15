@@ -1,0 +1,182 @@
+---
+name: reverse-engineering-saas
+description: Use when studying a SaaS web product from the outside in order to rebuild, clone or copy it (ClickUp, Pipedrive, Notion, a CRM, a project tool), when documenting its UX, screens, components, data model, business rules or API through a browser the agent drives, or when an agent must explore a live SaaS account without damaging production data or notifying real people.
+---
+
+# Reverse engineering a SaaS product
+
+## Overview
+
+The output is a knowledge base (KB) on disk from which a team that never used the product can rebuild it. Two rules are absolute:
+
+1. **The exploration never damages the user's production data and never reaches a real person.**
+2. **Every statement in the KB carries its evidence.**
+
+The KB is the only memory between sessions. Context ends before the work does, so write to disk after every feature.
+
+`<skill>` below means this skill's directory. Run scripts as `node <skill>/scripts/<name>.mjs`.
+
+Do not use this skill when the source code is available (read the code), for native binaries or Electron internals (use a decompiler or REA), or for a single question about one feature.
+
+## Start or resume
+
+- **KB exists:** read `STATUS.md`, `sandbox/environment.md` and the `open` rows of `sandbox/ledger.csv`. Close or verify every open row before new exploration. Run `node <skill>/scripts/check-kb.mjs <kb>`.
+- **No KB:** run `node <skill>/scripts/init-kb.mjs <kb> --product "<Name>"`. Default location: `./re-<product>/`. Then fill `00-charter.md` from the user's request.
+
+## Phases
+
+| Phase | Output | Browser writes |
+|---|---|---|
+| 1 Charter | `00-charter.md`: goal, scope, priorities, unattended or attended | None |
+| 2 Environment and preflight | `sandbox/environment.md` | None until the preflight passes |
+| 3 Recon from public sources | `sources.md`, `glossary.md`, seeds of `inventory/features.md` and `data-model/` | None (use web fetch, not the browser) |
+| 4 Map | `inventory/screens.md`, routes, stack, token baseline | A0, A1 |
+| 5 Deep dive, one feature at a time | `screens/`, `components/`, `rules/`, `flows/`, `data-model/`, `api/`, `topics/` | Per the matrix below |
+| 6 Synthesis | `clone/prd.md`, `clone/parity.md`, `clone/implications.md`, `design/tokens.md` | None |
+| 7 Close | Updated `STATUS.md`, reconciled ledger, `check-kb` passes | Restore and teardown only |
+
+Details per phase: `references/exploration.md`. KB layout, IDs and formats: `references/knowledge-base.md`.
+
+## Safety
+
+### Environment levels
+
+Use the highest level available. Record it in `sandbox/environment.md`.
+
+| Level | What it is | Who creates it |
+|---|---|---|
+| L1 Dedicated account | Trial or sandbox account with its own login, open in a separate browser profile that has no production session | The user. The agent never creates accounts and never types passwords |
+| L2 Separate workspace | A new workspace or company under the user's login, with no other members | The agent, when the user asked for a test environment and creation is free (no billing step, no terms to accept) |
+| L3 Sandbox container | One list, project or pipeline inside production, named `🧪 [RE] Sandbox`, private where the product allows | The agent, when the user asked for a test environment |
+| L4 Observe only | Production, no writes | Default when the user gave no permission to write |
+
+When the user asks for a test environment and no L1 exists: create L2 if free, otherwise L3, and add "Needs human: dedicated trial account in a separate browser profile (L1)" to `STATUS.md`.
+
+### Action classes and what each level allows
+
+| Class | Examples |
+|---|---|
+| A0 Read | Navigate, open, hover, read the DOM, screenshot |
+| A1 Transient UI | Open a menu or dialog and cancel, unsaved filter or sort, resize the window |
+| A2 Sandbox data | Create, edit, delete records the agent created, inside the sandbox |
+| A3 Personal preference | Theme, layout toggles, notification settings, dismissing banners, marking notifications as read |
+| A4 Shared configuration | Custom fields, statuses or tags above the container, automations, integrations, webhooks, permissions, workspace settings, imports, shared templates |
+| A5 Outbound or irreversible | Any email, message or invite; assigning, mentioning, sharing with or following anyone except the operator; billing, plan or trial changes; API tokens; connecting integrations; deleting anything not in the ledger; accepting terms; entering passwords |
+
+| | L1 | L2 | L3 | L4 |
+|---|---|---|---|---|
+| A0 | Yes | Yes | Yes | Yes |
+| A1 | Yes | Yes | Revert in the same session | Revert in the same session |
+| A2 | Yes | Yes | Inside the container only | No |
+| A3 | Yes | Ledger row with before-value, restore before the session ends | Same as L2 | Same as L2 |
+| A4 | Yes | Inside that workspace only | No | No |
+| A5 | No | No | No | No |
+
+A5 is forbidden at every level. Tests that need a second person (collaboration, permissions, notifications) go to "Needs human"; the user invites their own second account.
+
+### Write gate: before every A2, A3 or A4 action
+
+1. **Location.** The workspace name and breadcrumb on screen match the identifiers in `environment.md`.
+2. **Audience.** Nobody except the operator is assigned, mentioned, notified or shown the change.
+3. **Undo.** The undo path is known.
+4. **Ledger.** The row is in `sandbox/ledger.csv`, with the before-value when an existing thing changes.
+
+If one check fails, do not act. Mark the item `blocked` in `inventory/coverage.md` with the reason and continue with another item.
+
+### Hidden writes
+
+These change data or state without a Save button. Treat them as writes of the class they touch:
+
+- Fields that save on blur or on change (autosave).
+- Drag and drop, toggles, checkboxes, star or favorite buttons.
+- Opening a notification feed or inbox (marks items as read).
+- Closing onboarding checklists, tips and banners.
+- View, filter, sort and column changes that persist for everyone.
+- Keyboard shortcuts pressed while focus is in the page (they can complete, archive or assign).
+- Opening a record in some products ("recently viewed", "seen by").
+
+Check persistence by reloading. Never experiment on shared views: rebuild the case inside the sandbox.
+
+### Stop and skip
+
+Do not click through. Log the item as `blocked` and move on when you see: billing, upgrade or trial dialogs; any "send", "invite", "notify", "share", "apply to all" or "cannot be undone"; login, 2FA or CAPTCHA prompts; a location mismatch; any change that appears outside the sandbox.
+
+In unattended mode never ask the user. Write the item under "Needs human" in `STATUS.md` and continue. "Don't ask me anything" changes how blocks are reported. It does not widen what you may touch.
+
+After a mistake: undo it at once, then add a ledger row with type `incident`, what happened and what remains.
+
+### Preflight: before the first write at L2 or L3
+
+Record in `environment.md`: members who could be notified; active automations, webhooks, integrations, email and calendar sync in the write scope; plan and trial end date; baseline counts of the main record types. If anything outbound is active in the write scope, do not write there.
+
+### Data rules
+
+- Fake data only. Prefix every created name with `[RE]`. Emails at `example.com`. No real customer or teammate names.
+- Assign records to the operator or to nobody.
+- At L3 and L4, run `scripts/page/mask.js` before each screenshot that can show real data.
+
+Procedures for each level, the ledger format, teardown and incidents: `references/safety.md`.
+
+## Deep dive loop
+
+For each feature, in the order of `inventory/coverage.md`:
+
+1. **Fixtures.** Plan one record per state you need to see (empty, typical, overdue, long text, many items, each field type). Write the plan in `sandbox/fixtures.md`, create the records, add ledger rows.
+2. **Observe.** Anatomy (annotated screenshot), states, interactions, keyboard, accessibility, microcopy.
+3. **Probe rules.** Vary one input at a time and record input and result. Each confirmed behavior becomes an `R-###` rule in Given/When/Then form.
+4. **Persistence.** Reload, open a second tab, and find the scope of each change: user, view, container, workspace, URL or browser storage.
+5. **Network.** With `api-shapes.js` installed, map each action to its endpoint and payload shape.
+6. **Write.** Update the screen, component, rule, entity and API files, the evidence files and `coverage.md`. Restore A1 and A3 state.
+7. **Checkpoint.** If the KB is a git repository, commit with the feature ID.
+
+Do not start the next feature while findings exist only in context.
+
+## Evidence tags
+
+| Tag | Meaning |
+|---|---|
+| `[obs EV-012]` | The agent saw it in the product; the evidence file exists |
+| `[net EV-013]` | Network capture (shape file or request list) |
+| `[doc SRC-004]` | Public documentation listed in `sources.md` |
+| `[inf]` | Inference. The same line must cite the `Q-###` that would confirm it |
+
+Rules and data model fields need `obs`, `net` or `doc`. Every screen, component, flow and topic file ends with a "Not tested" list.
+
+## Page scripts
+
+Paste the file content into the browser's JavaScript tool. Each script returns JSON and stores nothing outside the page.
+
+| Script | Returns |
+|---|---|
+| `scripts/page/inventory.js` | Framework, component tag names, test IDs, ARIA roles, internal route patterns, third-party SDKs |
+| `scripts/page/tokens.js` | CSS variables and the most frequent colors, type sizes, radii, spacing and shadows |
+| `scripts/page/api-shapes.js` | Installs a recorder; `__re.api.dump()` returns endpoint templates and JSON shapes, never values |
+| `scripts/page/mask.js` | Blurs emails, phones, money and given selectors; `__re.mask.clear()` removes it |
+| `scripts/page/annotate.js` | Numbered outlines on given elements for anatomy screenshots |
+
+Tool-specific notes (saving screenshots, network, profiles, drag and drop): `references/extraction.md` and `references/tools.md`.
+
+## Close a session
+
+1. Restore every A1 and A3 change and verify it. Update the ledger.
+2. Update `STATUS.md`: phase, last session, next three actions, needs human, blocked items, sandbox state.
+3. Write `log/<date>-s<NN>.md`.
+4. Run `node <skill>/scripts/check-kb.mjs <kb>` and fix every error.
+5. At the end of the study only: tear down from the ledger, compare baseline counts, list residuals in `STATUS.md`, then run `check-kb --closing`.
+
+## Clean room
+
+Rebuild from behavior, not from assets. Do not copy source code, icons, illustrations, logos, brand names or long passages of text into the clone. Record microcopy as reference and write new copy for the clone. Use only the user's own account. Do not bypass access controls or read other customers' data. Keep request rates human. Note the product's terms on reverse engineering in `00-charter.md`.
+
+## Red flags
+
+| Thought | Reality |
+|---|---|
+| "I didn't click Save, so nothing changed" | Autosave, drag, toggles and read receipts write. Reload and check |
+| "It's a sandbox task, assigning a teammate is harmless" | Assignments and mentions notify real people. Operator only |
+| "The shared board is the best example" | Rebuild the case in the sandbox. Shared views are read-only |
+| "The user said don't ask, so I'll do it in production" | "Don't ask" changes reporting, not permissions |
+| "I'll remember what I changed" | Ledger row before the next action |
+| "I'll write the docs at the end" | Context ends first. Write after each feature |
+| "The docs say so" | That is `[doc]`, not `[obs]`. Tag it |
+| "Opening the editor is read-only" | Many editors autosave. Cancel, reload and check |
