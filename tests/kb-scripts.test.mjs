@@ -26,7 +26,7 @@ const write = (path, text) => writeFileSync(join(kb, path), text);
 const check = (...args) => run('check-kb.mjs', kb, ...args);
 
 test('init creates the tree, fills product and date, copies artifact templates', () => {
-  for (const path of ['STATUS.md', 'sandbox/ledger.csv', 'inventory/coverage.md', '_templates/screen.md', 'evidence/.gitkeep']) {
+  for (const path of ['STATUS.md', 'sandbox/ledger.csv', 'inventory/coverage.md', '_templates/screen.md', 'evidence/index.csv']) {
     assert.ok(existsSync(join(kb, path)), `${path} missing`);
   }
   const status = readFileSync(join(kb, 'STATUS.md'), 'utf8');
@@ -69,6 +69,11 @@ test('rules need evidence, and cited evidence must exist', () => {
   write('evidence/EV-001-deal-won.png', 'png');
   result = check();
   assert.equal(result.status, 0, result.stdout);
+  assert.match(result.stdout, /evidence\/EV-001-deal-won\.png: no row in evidence\/index\.csv/);
+  appendFileSync(join(kb, 'evidence/index.csv'), 'EV-001,2026-10-15,s01,/deal/:id,won deal leaves board,yes\nEV-099,2026-10-15,s01,/x,missing,no\n');
+  result = check();
+  assert.doesNotMatch(result.stdout, /EV-001-deal-won\.png: no row/);
+  assert.match(result.stdout, /EV-099 has no evidence file/);
 });
 
 test('malformed evidence tags, placeholder IDs, duplicates and broken links are errors', () => {
@@ -88,6 +93,46 @@ test('[inf] needs a question and artifacts need a Not tested section', () => {
   const result = check();
   assert.match(result.stdout, /\[inf\] without a Q-###/);
   assert.match(result.stdout, /components\/C-001-card\.md: no "## Not tested" section/);
+});
+
+test('fixture rows need a note and fail with --closing', () => {
+  appendFileSync(join(kb, 'sandbox/ledger.csv'), 'L-001,2026-10-15T10:00:00Z,A2,create,12 tasks,Sandbox,,,delete,fixture,\n');
+  let result = check();
+  assert.match(result.stdout, /fixture rows need a note/);
+  write('sandbox/ledger.csv', 'id,time,class,action,object,location,object_id,before,undo,status,note\nL-001,2026-10-15T10:00:00Z,A2,create,12 tasks,Sandbox,,,delete,fixture,test data for s02\n');
+  result = check();
+  assert.equal(result.status, 0, result.stdout);
+  result = check('--closing');
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /L-001 is a fixture still in the product/);
+});
+
+test('human rows need a note, warn during the study and fail with --closing', () => {
+  write('sandbox/ledger.csv', 'id,time,class,action,object,location,object_id,before,undo,status,note\nL-001,2026-10-15T10:00:00Z,incident,incident,mention of [person A],Sandbox,,,delete comment,human,deleting the comment would notify again; tell [person A] to ignore it\n');
+  let result = check();
+  assert.equal(result.status, 0, result.stdout);
+  assert.match(result.stdout, /L-001 waits for the user/);
+  result = check('--closing');
+  assert.equal(result.status, 1);
+});
+
+test('entity field rows need an evidence tag', () => {
+  write('data-model/entities/E-001-deal.md', '# E-001 Deal\n\n## Fields\n\n| Field | Type | Required | Default | Constraints or enum | Source |\n|---|---|---|---|---|---|\n| title | string | yes | | | [doc SRC-001] |\n| value | number | no | 0 | | |\n\n## Not tested\n- None.\n');
+  appendFileSync(join(kb, 'sources.md'), '| SRC-001 | API | https://example.com/api | api | 2026-10-15 | fields |\n');
+  const result = check();
+  assert.match(result.stdout, /E-001-deal\.md:8: fields row without an evidence tag/);
+  assert.doesNotMatch(result.stdout, /E-001-deal\.md:7:/);
+});
+
+test('--git creates a repository for the KB even inside another repository', () => {
+  const parent = join(dir, 'parent');
+  spawnSync('git', ['init', '-q', parent]);
+  const nested = join(parent, 're-nested');
+  const result = run('init-kb.mjs', nested, '--product', 'Nested', '--git');
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(existsSync(join(nested, '.git')), 'KB has its own repository');
+  const log = spawnSync('git', ['-C', nested, 'log', '--oneline'], { encoding: 'utf8' });
+  assert.match(log.stdout, /Create knowledge base for Nested/);
 });
 
 test('open ledger rows warn, and fail with --closing', () => {

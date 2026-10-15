@@ -1,6 +1,6 @@
 # Design tokens
 
-Theme(s) studied: {{themes}}. Window: 1440 × 900.
+Theme(s) studied: {{themes}}. Window: {{viewport}}.
 
 ## Color
 
@@ -21,6 +21,11 @@ Theme(s) studied: {{themes}}. Window: 1440 × 900.
 
 | Token | Duration | Easing | Used for | Evidence |
 |---|---|---|---|---|
+
+## Icons
+
+| Name | Size | Where used | Evidence |
+|---|---|---|---|
 
 ## Breakpoints and layout
 

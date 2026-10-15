@@ -7,13 +7,17 @@ Fill `00-charter.md` from the user's request. Decide without asking when the req
 | Item | Default |
 |---|---|
 | Goal | Rebuild the product's core loop well enough to replace it for the user's team |
-| Scope | Features the user named first, then the core loop (the screens a daily user opens every day) |
+| Scope | Features the user named, then the core loop (the screens a daily user opens every day) |
 | Depth | Rebuild grade: anatomy, states, rules, data model, API shapes |
 | Mode | Unattended if the user said not to ask or will be away; otherwise attended |
 | Environment | Per SKILL.md "Environment levels" |
 | Language | KB prose in the user's language |
 
 Record the product's terms on reverse engineering (search the terms page for "reverse", "copy", "scrape", "benchmark") with the URL.
+
+## Phase 2: Environment and preflight
+
+Follow `safety.md`: choose the level, set it up, run the preflight checklist, record baseline counts, fill `sandbox/environment.md`. No write before the preflight passes.
 
 ## Phase 3: Recon from public sources
 
@@ -42,11 +46,18 @@ Tag every claim from these as `[doc SRC-###]`. A documented behavior still needs
 
 ### Priority order
 
-1. The core loop: create, view, edit, complete the main object (task, deal) and the main views (list, board).
-2. Features the user named.
-3. Data model completeness: every field type, every relation.
-4. Collaboration, notifications, permissions (often need L1 and a second account).
-5. Settings, admin, billing, integrations.
+1. P1: features the user named.
+2. P2: the core loop: create, view, edit, complete the main object (task, deal) and the main views (list, board).
+3. P3: data model completeness: every field type, every relation.
+4. P4: collaboration, notifications, permissions (often need L1 and a second account).
+5. P5: settings, admin, billing, integrations.
+
+Exception: when a trial is running, plan-gated features come before its end date.
+
+### Screens, views and overlays
+
+- A screen is anything with its own URL pattern: each view type of a container (list, board, calendar) is a separate screen; a task or deal page that opens as a modal with its own URL (`/t/:id`) is a screen.
+- A modal, popover or panel without its own URL is a component, linked from the screens that open it.
 
 ## Phase 5: Deep dive
 
@@ -66,6 +77,7 @@ Tag every claim from these as `[doc SRC-###]`. A documented behavior still needs
 | Persistence | Scope of each change (user, view, container, workspace, URL, browser storage) |
 | Realtime | Does a change appear in a second tab without reload? |
 | Responsive | Behavior at 1440, 1024 and 390 px widths |
+| Motion | Transitions and animations: computed values from `tokens.js`, plus a short GIF or video when the tool can record one |
 | Performance as perceived | Skeletons, optimistic updates, delays the user sees |
 | Not tested | Everything skipped, with the reason |
 
@@ -142,3 +154,15 @@ search, notifications (in-app, email, push: from docs when not observable), perm
 | `clone/implications.md` | For each area: copy, avoid (problems in `findings.md`), improve |
 
 The PRD states the build order: data model, core loop screens, rules from `parity.md`, then secondary features.
+
+### Depth when writes are not allowed
+
+A feature that could only be read (A4 at L3, L4) is documented from settings pages, editors opened and cancelled, and public docs. Mark its coverage `partial` with the note "read only, not exercised", and say so in the `STATUS.md` summary so the user knows what was observed and what was not.
+
+### Re-verification
+
+Rules in P1 and P2 should rest on two pieces of evidence: two methods (`obs` and `net`) or two sessions. When a later session reproduces a claim, add the new evidence ID to it. When the product changes a behavior, keep the old rule, mark it `superseded`, and add the new one.
+
+## Phase 7: Close
+
+Follow "Close a session" in SKILL.md and "Teardown" in `safety.md`. The `STATUS.md` summary states, in three lines: what was covered, what was not and why, and what the user must decide.

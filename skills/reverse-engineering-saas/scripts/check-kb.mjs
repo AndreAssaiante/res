@@ -12,7 +12,8 @@ const SCANNED_EXTENSIONS = new Set(['.md', '.mmd', '.ts']);
 const LEDGER_COLUMNS = ['id', 'time', 'class', 'action', 'object', 'location', 'object_id', 'before', 'undo', 'status', 'note'];
 const LEDGER_CLASSES = new Set(['A1', 'A2', 'A3', 'A4', 'incident']);
 const LEDGER_ACTIONS = new Set(['create', 'update', 'delete', 'toggle', 'incident']);
-const LEDGER_STATUSES = new Set(['open', 'restored', 'removed', 'kept']);
+const LEDGER_STATUSES = new Set(['open', 'restored', 'removed', 'fixture', 'kept', 'human']);
+const EVIDENCE_INDEX = 'evidence/index.csv';
 const COVERAGE_VALUES = new Set(['todo', 'partial', 'done', 'blocked', 'n/a']);
 // Directories whose file names define IDs.
 const FILE_ID_DIRS = {
@@ -100,7 +101,7 @@ function collectDefinitions(kb, files) {
     for (const [dir, prefix] of Object.entries(FILE_ID_DIRS)) {
       if (dirname(file) !== dir) continue;
       const name = file.slice(dir.length + 1);
-      if (name === '.gitkeep') continue;
+      if (name === '.gitkeep' || file === EVIDENCE_INDEX) continue;
       const match = name.match(/^([A-Z]+)-(\d{3})(?=[-.])/);
       if (match && match[1] === prefix) define(`${prefix}-${match[2]}`, file, 0, 'file');
       else warnings.push(`${file}: file name should start with ${prefix}-### (for example ${prefix}-001-name)`);
@@ -201,11 +202,14 @@ function checkLedger(kb, closing) {
     if (!LEDGER_CLASSES.has(row.class)) errors.push(`${where}: class must be one of ${[...LEDGER_CLASSES].join(', ')}`);
     if (!LEDGER_ACTIONS.has(row.action)) errors.push(`${where}: action must be one of ${[...LEDGER_ACTIONS].join(', ')}`);
     if (!LEDGER_STATUSES.has(row.status)) errors.push(`${where}: status must be one of ${[...LEDGER_STATUSES].join(', ')}`);
-    if ((row.status === 'kept' || row.class === 'incident') && !row.note) errors.push(`${where}: ${row.status === 'kept' ? 'kept' : 'incident'} rows need a note`);
+    if (['kept', 'fixture', 'human'].includes(row.status) && !row.note) errors.push(`${where}: ${row.status} rows need a note`);
+    else if (row.class === 'incident' && !row.note) errors.push(`${where}: incident rows need a note`);
     if (row.status === 'open') {
       open += 1;
       (closing ? errors : warnings).push(`${where}: ${row.id} is still open (${row.object})`);
     }
+    if (row.status === 'fixture' && closing) errors.push(`${where}: ${row.id} is a fixture still in the product (${row.object})`);
+    if (row.status === 'human') (closing ? errors : warnings).push(`${where}: ${row.id} waits for the user: ${row.note}`);
   });
   return { rows: rows.length, open };
 }
@@ -219,7 +223,7 @@ function checkStatus(kb, files, ledger) {
   const text = readFileSync(path, 'utf8');
   const updated = text.match(/^Updated:\s*(\d{4}-\d{2}-\d{2})/m);
   if (!updated) warnings.push('STATUS.md: no "Updated: YYYY-MM-DD" line');
-  for (const section of ['Next actions', 'Needs human', 'Blocked']) {
+  for (const section of ['Summary', 'Next actions', 'Needs human', 'Blocked']) {
     if (!new RegExp(`^##\\s+${section}`, 'm').test(text)) warnings.push(`STATUS.md: no "## ${section}" section`);
   }
   const logDates = files
@@ -231,6 +235,40 @@ function checkStatus(kb, files, ledger) {
   if (updated && newestLog && updated[1] < newestLog) warnings.push(`STATUS.md: updated ${updated[1]}, older than the newest log ${newestLog}`);
   const stated = text.match(/Open ledger rows:\s*(\d+)/);
   if (stated && Number(stated[1]) !== ledger.open) warnings.push(`STATUS.md: says ${stated[1]} open ledger rows, ledger has ${ledger.open}`);
+}
+
+function checkEvidenceIndex(kb, files) {
+  const evidence = files.filter((file) => dirname(file) === 'evidence' && /^evidence\/EV-\d{3}/.test(file));
+  const path = join(kb, EVIDENCE_INDEX);
+  if (!existsSync(path)) {
+    if (evidence.length) warnings.push(`${EVIDENCE_INDEX} is missing`);
+    return;
+  }
+  const [, ...rows] = parseCsv(readFileSync(path, 'utf8'));
+  const indexed = new Set(rows.map((cells) => (cells[0] ?? '').trim()));
+  for (const file of evidence) {
+    const id = file.match(/EV-\d{3}/)[0];
+    if (!indexed.has(id)) warnings.push(`${file}: no row in ${EVIDENCE_INDEX}`);
+  }
+  for (const id of indexed) {
+    if (id && !definitions.has(id)) warnings.push(`${EVIDENCE_INDEX}: ${id} has no evidence file`);
+  }
+}
+
+// Field and relation rows in entity files need a source tag.
+function checkEntities(kb, files) {
+  for (const file of files.filter((name) => name.startsWith('data-model/entities/') && name.endsWith('.md'))) {
+    let section = '';
+    stripIgnored(readFileSync(join(kb, file), 'utf8'))
+      .split('\n')
+      .forEach((line, index) => {
+        const heading = line.match(/^##\s+(.+)/);
+        if (heading) section = heading[1].trim();
+        if (!['Fields', 'Relations'].includes(section) || !line.startsWith('|')) return;
+        if (/^\|\s*(Field|Relation)\s*\|/.test(line) || /^\|[\s|:-]+\|$/.test(line)) return;
+        if (!/\[(obs|net|doc)\s|\[inf\]/.test(line)) warnings.push(`${file}:${index + 1}: ${section.toLowerCase()} row without an evidence tag`);
+      });
+  }
 }
 
 function coverageSummary(kb) {
@@ -283,6 +321,8 @@ function main() {
   checkReferencesAndLinks(kb, files);
   checkRules(kb, files);
   checkArtifacts(files, kb);
+  checkEvidenceIndex(kb, files);
+  checkEntities(kb, files);
   checkStatus(kb, files, ledger);
   const coverage = coverageSummary(kb);
 

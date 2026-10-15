@@ -38,6 +38,7 @@ re-<product>/
     parity.md               Acceptance tests derived from R-### rules
     implications.md         Copy, avoid, improve
   evidence/EV-###-<slug>.*  Screenshots, script outputs, network shapes
+  evidence/index.csv        One row per evidence file: date, session, route, what it shows, masked
   log/<YYYY-MM-DD>-s<NN>.md One log per session
   _templates/               Artifact templates (screen, component, entity, flow, rules, topic, session log)
 ```
@@ -68,6 +69,8 @@ Any other mention of an ID is a reference. Every reference must resolve to a def
 - Mask personal data before capture (L3, L4).
 - Tag every claim: `[obs EV-###]`, `[net EV-###]`, `[doc SRC-###]`, or `[inf]` with a `Q-###` on the same line.
 - Script outputs (`inventory.js`, `tokens.js`, `api-shapes.js`) are evidence: save the JSON as `EV-###-<script>-<screen>.json`.
+- Add a row to `evidence/index.csv` for each file: `id,date,session,route,shows,masked`. The date tells engineers how old a claim is; products change weekly.
+- A screenshot that shows unmasked personal data is deleted and retaken. It never enters the KB or git.
 
 ## STATUS.md
 
@@ -77,6 +80,11 @@ Keep these sections, in this order:
 # Status: <Product>
 Updated: 2026-10-15 · Session: s03 · Phase: 5 Deep dive
 Environment: L3 · Sandbox: 🧪 [RE] Sandbox (space Personal) · Open ledger rows: 0
+
+## Summary
+- Covered: board, task view, dates (F-001 to F-006). 24 rules.
+- Not covered: automations and permissions, read only at L3 (not exercised).
+- Decide: create a trial account (L1) to test them.
 
 ## Next actions
 1. F-012 Board drag and drop: ...
@@ -96,16 +104,16 @@ Environment: L3 · Sandbox: 🧪 [RE] Sandbox (space Personal) · Open ledger ro
 - None.
 ```
 
-`Open ledger rows` must be 0 at the end of every session, except rows marked `kept` with a note.
+`Open ledger rows` must be 0 at the end of every session. Rows left as test data for the next session take status `fixture`; rows the user decided to keep take `kept`; rows only the user can resolve take `human`. All three need a note.
 
 ## Coverage matrix
 
 `inventory/coverage.md` is one table. Rows are features in priority order. Columns are aspects. Cell values: `todo`, `partial`, `done`, `blocked`, `n/a`. The last column holds notes (reason for `blocked`, files written).
 
 ```markdown
-| Feature | Anatomy | States | Interactions | Rules | Data | Network | Keyboard | Persistence | Notes |
-|---|---|---|---|---|---|---|---|---|---|
-| F-001 Board view | done | done | partial | done | done | done | done | done | drag not automatable |
+| Feature | Anatomy | States | Interactions | Rules | Data | Network | Keyboard and a11y | Persistence | Design | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| F-001 Board view | done | done | partial | done | done | done | done | done | done | drag not automatable |
 ```
 
 ## Session log
@@ -114,13 +122,13 @@ Environment: L3 · Sandbox: 🧪 [RE] Sandbox (space Personal) · Open ledger ro
 
 ## Git
 
-Initialize the KB as a git repository (`init-kb.mjs --git`). Commit after each feature with the feature ID in the message. Evidence images are part of the commit.
+Initialize the KB as its own git repository (`init-kb.mjs --git`), even inside another repository. Commit after each feature with the feature ID in the message. Masked evidence images are part of the commit.
 
 ## Checks
 
 `node <skill>/scripts/check-kb.mjs <kb>` reports:
 
 - Errors: unresolved references, duplicate definitions, rules without evidence, invalid ledger rows, `kept` or `incident` rows without a note, missing `STATUS.md`.
-- Warnings: open ledger rows, `[inf]` lines without `Q-###`, artifact files without a "Not tested" section, `STATUS.md` older than the newest log, template placeholders left in place.
+- Warnings: open ledger rows, `[inf]` lines without `Q-###`, artifact files without a "Not tested" section, entity field rows without an evidence tag, evidence files missing from `evidence/index.csv`, `STATUS.md` older than the newest log, template placeholders left in place.
 
-Add `--closing` at the end of the study: open ledger rows become errors.
+Add `--closing` at the end of the study: `open`, `fixture` and `human` ledger rows become errors.

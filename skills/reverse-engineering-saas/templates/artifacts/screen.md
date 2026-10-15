@@ -55,6 +55,14 @@ Features: {{F-###}} · URL: `{{/pattern/:id}}` · Status: draft
 
 - {{R-### links}}
 
+## Realtime and performance
+
+| Check | Result | Evidence |
+|---|---|---|
+| A change in a second tab appears without reload | | |
+| Loading pattern (skeleton, spinner, optimistic update) | | |
+| Delays the user sees | | |
+
 ## Responsive
 
 | Width | Change | Evidence |

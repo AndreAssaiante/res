@@ -21,7 +21,9 @@ Do not use this skill when the source code is available (read the code), for nat
 ## Start or resume
 
 - **KB exists:** read `STATUS.md`, `sandbox/environment.md` and the `open` rows of `sandbox/ledger.csv`. Close or verify every open row before new exploration. Run `node <skill>/scripts/check-kb.mjs <kb>`.
-- **No KB:** run `node <skill>/scripts/init-kb.mjs <kb> --product "<Name>"`. Default location: `./re-<product>/`. Then fill `00-charter.md` from the user's request.
+- **No KB:** run `node <skill>/scripts/init-kb.mjs <kb> --product "<Name>" --git`. Default location: `./re-<product>/`. Then fill `00-charter.md` from the user's request.
+- **Objects from earlier work that are not in this ledger** (an old sandbox list, test records): do not touch them. List them in `STATUS.md` under "Residuals" as pre-existing.
+- **A session that ran without this skill** (changes made, nothing recorded): follow "Adopting an unrecorded session" in `references/safety.md` before anything else.
 
 ## Phases
 
@@ -46,11 +48,15 @@ Use the highest level available. Record it in `sandbox/environment.md`.
 | Level | What it is | Who creates it |
 |---|---|---|
 | L1 Dedicated account | Trial or sandbox account with its own login, open in a separate browser profile that has no production session | The user. The agent never creates accounts and never types passwords |
-| L2 Separate workspace | A new workspace or company under the user's login, with no other members | The agent, when the user asked for a test environment and creation is free (no billing step, no terms to accept) |
-| L3 Sandbox container | One list, project or pipeline inside production, named `🧪 [RE] Sandbox`, private where the product allows | The agent, when the user asked for a test environment |
+| L2 Separate workspace | A new workspace or company under the user's login, with no other members | The agent, when the user asked for a test environment and creation is free (no billing step, no terms to accept). Creating it is an A4 action with a ledger row |
+| L3 Sandbox container | One list, project or pipeline inside production, named `🧪 [RE] Sandbox`, private where the product allows | The agent, when the user asked for a test environment. Creating it is an A2 action with a ledger row. A container the user already designated keeps its name |
 | L4 Observe only | Production, no writes | Default when the user gave no permission to write |
 
-When the user asks for a test environment and no L1 exists: create L2 if free, otherwise L3, and add "Needs human: dedicated trial account in a separate browser profile (L1)" to `STATUS.md`.
+The user asked for a test environment when they say so, or tell you to test or try features ("testa tudo", "try the automations"). A request to look, read or document only is not permission to write: use L4.
+
+When the user asked for a test environment and no L1 exists: create L2 if free, otherwise L3, and add "Needs human: dedicated trial account in a separate browser profile (L1)" to `STATUS.md`. If creating a workspace or company starts a subscription or a trial (Pipedrive "Add company", for example), it is A5: use L3.
+
+At L3, "inside the sandbox" means the container plus records the agent created with the `[RE]` prefix that link only to sandbox records (a person created from a sandbox deal). When other members can see the container, remove all A2 records, the container included, at the end of every session, and in unattended mode finish the teardown before the team's working hours.
 
 ### Action classes and what each level allows
 
@@ -58,10 +64,10 @@ When the user asks for a test environment and no L1 exists: create L2 if free, o
 |---|---|
 | A0 Read | Navigate, open, hover, read the DOM, screenshot |
 | A1 Transient UI | Open a menu or dialog and cancel, unsaved filter or sort, resize the window |
-| A2 Sandbox data | Create, edit, delete records the agent created, inside the sandbox |
+| A2 Sandbox data | Create, edit, delete records the agent created inside the sandbox, including views and fields scoped to the container |
 | A3 Personal preference | Theme, layout toggles, notification settings, dismissing banners, marking notifications as read |
-| A4 Shared configuration | Custom fields, statuses or tags above the container, automations, integrations, webhooks, permissions, workspace settings, imports, shared templates |
-| A5 Outbound or irreversible | Any email, message or invite; assigning, mentioning, sharing with or following anyone except the operator; billing, plan or trial changes; API tokens; connecting integrations; deleting anything not in the ledger; accepting terms; entering passwords |
+| A4 Shared configuration | Custom fields, statuses or tags above the container (or of unknown scope), automations, integrations, webhooks, permissions, workspace settings, imports, shared templates, creating a workspace |
+| A5 Outbound or irreversible | Any email, message, notification or invite that reaches anyone except the operator; assigning, mentioning, sharing with or following anyone except the operator; billing, plan or trial changes; API tokens; connecting integrations; deleting anything not in the ledger; accepting terms; entering passwords |
 
 | | L1 | L2 | L3 | L4 |
 |---|---|---|---|---|
@@ -69,15 +75,17 @@ When the user asks for a test environment and no L1 exists: create L2 if free, o
 | A1 | Yes | Yes | Revert in the same session | Revert in the same session |
 | A2 | Yes | Yes | Inside the container only | No |
 | A3 | Yes | Ledger row with before-value, restore before the session ends | Same as L2 | Same as L2 |
-| A4 | Yes | Inside that workspace only | No | No |
+| A4 | Yes | Creating the workspace, then changes inside it only | No | No |
 | A5 | No | No | No | No |
 
-A5 is forbidden at every level. Tests that need a second person (collaboration, permissions, notifications) go to "Needs human"; the user invites their own second account.
+A5 is forbidden at every level. Tests that need a second person (collaboration, permissions, notifications) go to "Needs human": they belong at L1, where the user adds a second account of their own. Adding a member to production is the user's decision (often a paid seat). Features gated by a plan the environment lacks are `blocked: plan` in coverage; starting a trial is the user's decision.
+
+An automation that emails or notifies only the operator is A4, not A5. Disable time-triggered automations before the session ends.
 
 ### Write gate: before every A2, A3 or A4 action
 
 1. **Location.** The workspace name and breadcrumb on screen match the identifiers in `environment.md`.
-2. **Audience.** Nobody except the operator is assigned, mentioned, notified or shown the change.
+2. **Audience.** Nobody except the operator is assigned, mentioned, followed or notified. At L3, members may see `[RE]` fake data in a container the product cannot make private; nothing else.
 3. **Undo.** The undo path is known.
 4. **Ledger.** The row is in `sandbox/ledger.csv`, with the before-value when an existing thing changes.
 
@@ -103,17 +111,18 @@ Do not click through. Log the item as `blocked` and move on when you see: billin
 
 In unattended mode never ask the user. Write the item under "Needs human" in `STATUS.md` and continue. "Don't ask me anything" changes how blocks are reported. It does not widen what you may touch.
 
-After a mistake: undo it at once, then add a ledger row with type `incident`, what happened and what remains.
+After a mistake: undo it at once if the undo itself reaches nobody, then add a ledger row with class `incident`, what happened and what remains. If the undo would notify someone again (unassigning, deleting a comment), leave it and write it under "Needs human". Procedure: `references/safety.md`.
 
 ### Preflight: before the first write at L2 or L3
 
-Record in `environment.md`: members who could be notified; active automations, webhooks, integrations, email and calendar sync in the write scope; plan and trial end date; baseline counts of the main record types. If anything outbound is active in the write scope, do not write there.
+Record in `environment.md`: members who could be notified; active automations, webhooks, integrations, email and calendar sync in the write scope; plan and trial end date; baseline counts of the main record types. If any automation, webhook, integration or sync would fire on records in the write scope, do not write there. Checklist: `references/safety.md`.
 
 ### Data rules
 
 - Fake data only. Prefix every created name with `[RE]`. Emails at `example.com`. No real customer or teammate names.
+- KB text never contains real personal or customer data. When documenting production configuration (field options, automation conditions, filters), replace real values with placeholders such as `[customer]` or `[person]`.
 - Assign records to the operator or to nobody.
-- At L3 and L4, run `scripts/page/mask.js` before each screenshot that can show real data.
+- At L3 and L4, run `scripts/page/mask.js` before each screenshot that can show real data. A screenshot that shows unmasked personal data is deleted at once and retaken; it never enters the KB.
 
 Procedures for each level, the ledger format, teardown and incidents: `references/safety.md`.
 
@@ -129,7 +138,7 @@ For each feature, in the order of `inventory/coverage.md`:
 6. **Write.** Update the screen, component, rule, entity and API files, the evidence files and `coverage.md`. Restore A1 and A3 state.
 7. **Checkpoint.** If the KB is a git repository, commit with the feature ID.
 
-Do not start the next feature while findings exist only in context.
+Do not start the next feature while findings exist only in context. A finding without evidence goes to `questions.md` as "Confirm: ...", never into a rule.
 
 ## Evidence tags
 
@@ -140,7 +149,7 @@ Do not start the next feature while findings exist only in context.
 | `[doc SRC-004]` | Public documentation listed in `sources.md` |
 | `[inf]` | Inference. The same line must cite the `Q-###` that would confirm it |
 
-Rules and data model fields need `obs`, `net` or `doc`. Every screen, component, flow and topic file ends with a "Not tested" list.
+Rules and data model fields need `obs`, `net` or `doc`. Every screen, component, flow and topic file ends with a "Not tested" list. Record each evidence file in `evidence/index.csv` (date, session, route, what it shows, masked).
 
 ## Page scripts
 
@@ -158,15 +167,21 @@ Tool-specific notes (saving screenshots, network, profiles, drag and drop): `ref
 
 ## Close a session
 
-1. Restore every A1 and A3 change and verify it. Update the ledger.
+1. Restore every A1 and A3 change and verify it. Disable time-triggered automations. Update the ledger.
 2. Update `STATUS.md`: phase, last session, next three actions, needs human, blocked items, sandbox state.
 3. Write `log/<date>-s<NN>.md`.
 4. Run `node <skill>/scripts/check-kb.mjs <kb>` and fix every error.
 5. At the end of the study only: tear down from the ledger, compare baseline counts, list residuals in `STATUS.md`, then run `check-kb --closing`.
 
+Every ledger row ends the session as `restored`, `removed`, `fixture` (test data left for the next session), `kept` (the user decided to keep it) or `human` (only the user can resolve it; the note says what to do). `--closing` fails on `open`, `fixture` and `human`.
+
+**When time or context runs short,** stop exploring and do this, in order: (1) ledger rows for every change not yet recorded, `unknown` where the before-value is not known; (2) undo what affects other people (shared views, assignments); (3) findings to files, unverified ones as `Q-###`; (4) `STATUS.md` with next actions and needs human; (5) `check-kb` and commit. Stop exploring early enough to finish all five.
+
 ## Clean room
 
-Rebuild from behavior, not from assets. Do not copy source code, icons, illustrations, logos, brand names or long passages of text into the clone. Record microcopy as reference and write new copy for the clone. Use only the user's own account. Do not bypass access controls or read other customers' data. Keep request rates human. Note the product's terms on reverse engineering in `00-charter.md`.
+Rebuild from behavior, not from assets. Do not copy source code, icons, illustrations, logos, brand names or long passages of text into the clone. Record microcopy as reference and write new copy for the clone. Use only the user's own account. Do not bypass access controls or read other customers' data. Keep request rates human.
+
+Most SaaS terms forbid reverse engineering or using the service to build a competing product. Record the clause and its URL in `00-charter.md` and add it to "Needs human" in `STATUS.md`. The decision belongs to the user; the study follows the user's original instruction until the user decides otherwise.
 
 ## Red flags
 
@@ -180,3 +195,5 @@ Rebuild from behavior, not from assets. Do not copy source code, icons, illustra
 | "I'll write the docs at the end" | Context ends first. Write after each feature |
 | "The docs say so" | That is `[doc]`, not `[obs]`. Tag it |
 | "Opening the editor is read-only" | Many editors autosave. Cancel, reload and check |
+| "I'll rebuild the shared view's old filters from memory" | A guess can make it worse. Ledger `incident`, "Needs human" |
+| "The undo is the polite thing" | Unassigning or deleting can notify the person again. Check first |

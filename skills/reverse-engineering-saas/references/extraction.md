@@ -23,7 +23,8 @@ Playwright MCP's `browser_evaluate` expects a function. Wrap the file content: `
 3. For a single component, call `__re.tokens({root: '<selector>'})` and record the result in the component file.
 4. Hover, focus and pressed states: hold the state (hover with the mouse, focus with Tab), then call `tokens` on that element. Take a zoomed screenshot.
 5. Fonts: the `fonts` field lists loaded font faces. Icons: record names and sizes from SVG `<use>` references and class names. Do not copy icon files into the clone.
-6. Motion: computed `transition` and `animation` values are in the component output.
+6. Motion: computed `transition` and `animation` values are in the component output. For animations that values do not explain (drag previews, panels sliding), record a short GIF or video when the tool can (Claude in Chrome `gif_creator`) and save it as evidence.
+7. Icons: list them in `design/tokens.md` under "Icons" (name, size, where used). Names come from SVG `<use href="#name">`, class names or `aria-label`.
 
 ## Component names
 
@@ -63,7 +64,7 @@ For enums (statuses, priorities, activity types), read the options from the UI m
 - Name: `EV-###-<screen>-<state>.png`.
 - Mask personal data first at L3 and L4.
 - Anatomy: run `annotate.js` with the region selectors, capture, then clear.
-- Use a fixed window size for comparability (1440 × 900 unless the study is about responsive behavior). Record it in `environment.md`.
+- Use one window size for every screenshot, recorded in `environment.md`. When to resize and when not: `tools.md`.
 - How to write the file depends on the tool: see `tools.md`.
 
 ## Drag and drop

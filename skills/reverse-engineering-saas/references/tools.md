@@ -32,7 +32,9 @@ Record the profile name in `environment.md`.
 
 ## Window size
 
-Set a fixed size at the start (1440 × 900) with the tool's resize function. Record it. Change it only for responsive checks, then restore it.
+In a dedicated profile (L1) or a browser only the agent uses, set a fixed size at the start (1440 × 900) and record it. Change it only for responsive checks, then restore it.
+
+In the user's own Chrome, do not resize a window the user may be using (a call, other work). Record the current viewport in `environment.md` and use it for every screenshot. Responsive checks wait for a moment the user is away, or go to "Needs human".
 
 ## Public sources
 

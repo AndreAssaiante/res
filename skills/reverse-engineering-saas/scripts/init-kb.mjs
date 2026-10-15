@@ -2,7 +2,7 @@
 // Creates a reverse-engineering knowledge base from the skill templates.
 // Never overwrites an existing file.
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -61,10 +61,11 @@ function copyTree(sourceDir, targetDir, replacements, report) {
   }
 }
 
-function insideGitRepo(dir) {
+// True when dir is the root of its own git repository (not just inside another one).
+function isRepoRoot(dir) {
   try {
-    execFileSync('git', ['-C', dir, 'rev-parse', '--is-inside-work-tree'], { stdio: 'ignore' });
-    return true;
+    const top = execFileSync('git', ['-C', dir, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+    return realpathSync(top) === realpathSync(dir);
   } catch {
     return false;
   }
@@ -100,8 +101,8 @@ function main() {
   console.log(`Created ${report.created.length} files, kept ${report.skipped.length} existing files.`);
 
   if (options.git) {
-    if (insideGitRepo(kbDir)) {
-      console.log('Already inside a git repository: no new repository created.');
+    if (isRepoRoot(kbDir)) {
+      console.log('The knowledge base is already a git repository.');
     } else {
       execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: kbDir });
       execFileSync('git', ['add', '-A'], { cwd: kbDir });

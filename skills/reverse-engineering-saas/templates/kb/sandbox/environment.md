@@ -7,7 +7,7 @@
 | Browser profile | {{profile}} |
 | Account | {{account}} |
 | Plan and trial end | {{plan}} |
-| Window size | 1440 × 900 |
+| Window size | {{viewport}} |
 
 ## Location check
 
