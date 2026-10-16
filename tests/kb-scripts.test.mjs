@@ -142,11 +142,28 @@ test('--git creates a repository for the KB even inside another repository', () 
   const parent = join(dir, 'parent');
   spawnSync('git', ['init', '-q', parent]);
   const nested = join(parent, 're-nested');
-  const result = run('init-kb.mjs', nested, '--product', 'Nested', '--git');
+  const identity = { GIT_AUTHOR_NAME: 'Test', GIT_AUTHOR_EMAIL: 'test@example.com', GIT_COMMITTER_NAME: 'Test', GIT_COMMITTER_EMAIL: 'test@example.com' };
+  const result = spawnSync(process.execPath, [join(scripts, 'init-kb.mjs'), nested, '--product', 'Nested', '--git'], {
+    encoding: 'utf8',
+    env: { ...process.env, ...identity },
+  });
   assert.equal(result.status, 0, result.stderr);
   assert.ok(existsSync(join(nested, '.git')), 'KB has its own repository');
   const log = spawnSync('git', ['-C', nested, 'log', '--oneline'], { encoding: 'utf8' });
   assert.match(log.stdout, /Create knowledge base for Nested/);
+});
+
+test('--git without a git identity still creates the repository', () => {
+  const target = join(dir, 're-no-identity');
+  const empty = join(dir, 'empty-home');
+  spawnSync('mkdir', ['-p', empty]);
+  // useConfigOnly stops git from guessing an identity from the OS user, as on CI runners.
+  const env = { ...process.env, HOME: empty, XDG_CONFIG_HOME: empty, GIT_CONFIG_NOSYSTEM: '1', GIT_CONFIG_COUNT: '1', GIT_CONFIG_KEY_0: 'user.useConfigOnly', GIT_CONFIG_VALUE_0: 'true' };
+  for (const key of ['GIT_AUTHOR_NAME', 'GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_NAME', 'GIT_COMMITTER_EMAIL', 'EMAIL']) delete env[key];
+  const result = spawnSync(process.execPath, [join(scripts, 'init-kb.mjs'), target, '--product', 'X', '--git'], { encoding: 'utf8', env });
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(existsSync(join(target, '.git')));
+  assert.match(result.stdout, /initial commit failed/);
 });
 
 test('open ledger rows warn, and fail with --closing', () => {

@@ -64,7 +64,7 @@ function copyTree(sourceDir, targetDir, replacements, report) {
 // True when dir is the root of its own git repository (not just inside another one).
 function isRepoRoot(dir) {
   try {
-    const top = execFileSync('git', ['-C', dir, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
+    const top = execFileSync('git', ['-C', dir, 'rev-parse', '--show-toplevel'], { encoding: 'utf8', stdio: 'pipe' }).trim();
     return realpathSync(top) === realpathSync(dir);
   } catch {
     return false;
@@ -106,8 +106,13 @@ function main() {
     } else {
       execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: kbDir });
       execFileSync('git', ['add', '-A'], { cwd: kbDir });
-      execFileSync('git', ['commit', '-q', '-m', `Create knowledge base for ${options.product}`], { cwd: kbDir });
-      console.log('Git repository created with an initial commit.');
+      try {
+        execFileSync('git', ['commit', '-q', '-m', `Create knowledge base for ${options.product}`], { cwd: kbDir, stdio: 'pipe' });
+        console.log('Git repository created with an initial commit.');
+      } catch {
+        // Usually a missing git identity (user.name, user.email). The repository is still usable.
+        console.log('Git repository created; the initial commit failed. Set git user.name and user.email, then commit.');
+      }
     }
   }
 
