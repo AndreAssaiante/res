@@ -38,10 +38,11 @@ A new workspace usually starts on the free plan while production may run on a pa
 ### L3 Sandbox container
 
 1. Pick the most private place the product offers: a personal space, a private project, a pipeline restricted to the operator.
-2. Name it `🧪 [RE] Sandbox`.
-3. Record the full breadcrumb, URL and ID. The write gate compares the screen against this.
-4. Inherited configuration (statuses, tags, custom fields defined above the container) is read-only. Create new fields at container level only, and only when the product offers that scope explicitly.
-5. Note who can see the container. A pipeline or project visible to the whole company is acceptable only with fake data and the `[RE]` prefix.
+2. If the container cannot be private (the product has no such option, or making it private is A4, such as adding a visibility group), hide the records instead: set each record's own visibility to the operator only ("owner only", "private", "only me") where the product offers it. Check it from the record list, and record it in `environment.md`.
+3. Name it `🧪 [RE] Sandbox`.
+4. Record the full breadcrumb, URL and ID. The write gate compares the screen against this.
+5. Inherited configuration (statuses, tags, custom fields defined above the container) is read-only. Create new fields at container level only, and only when the product offers that scope explicitly.
+6. Note who can see the container and the records. A pipeline or project visible to the whole company is acceptable only with fake data and the `[RE]` prefix, and with records hidden as in step 2 when the product allows it.
 
 ### L4 Observe only
 
@@ -59,7 +60,9 @@ Run before the first write at L2 or L3. Record each answer in `environment.md`.
 | Integrations | Slack, Teams, email, calendar, Zapier, Make | None posting from the write scope |
 | Email and calendar sync | Personal and company sync settings | Off, or the records created have no attendees or recipients |
 | Plan and trial | Billing page (read only) | Plan known; trial end date noted |
-| Baseline counts | List views with counters, or a configured API connector (GET only) | Counts recorded for comparison at close |
+| Baseline counts | Records of each main type in the container, and the operator's records added or changed since the first ledger row: a list view filtered by owner and date, or a count endpoint (GET only) | Counts and the filters used recorded for comparison at close |
+
+Count only what the study can change. Totals for the whole account drift while the team works, so teardown could not explain the differences. Do not pull full record lists through an API connector to count them: they bring real customer data into the agent's context. Prefer a filter, or an endpoint that returns a total without the records (a summary or count endpoint, or a total in the pagination data).
 
 If an automation would fire on sandbox records, choose another container or stay at L4 for that feature.
 
@@ -99,7 +102,7 @@ At the end of each session: restore every A1 and A3 row, and disable time-trigge
 2. Delete through the product's own controls. Prefer deleting the container when everything inside it belongs to the study.
 3. Verify each removal: reload, search for the `[RE]` prefix, check trash or "restore data" pages.
 4. Look for orphans. Deleting a parent can leave children behind (activities, notes, comments, attachments, time entries). Search for them by the `[RE]` prefix and by date.
-5. Compare the baseline counts with the current counts. Explain every difference.
+5. Count again with the baseline filters: the container, and the operator's records added or changed since the first ledger row. Each record still there must match a ledger row marked `kept`, or a residual. Explain every other difference.
 6. List residuals in `STATUS.md` (for example "a note attached to a deleted deal; no UI to delete it").
 7. Run `check-kb --closing`. It fails while any ledger row is `open`, `fixture` or `human`.
 

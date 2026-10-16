@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 (2026-10-16)
+
+Fixes for the gaps found by the first real study (Pipedrive, L3, `examples/pipedrive/`).
+
+- Handoff: `pack-kb.mjs` keeps `sandbox/ledger.csv` in the zip with object IDs and locations blanked and URLs replaced by `[url]`. An unzipped handoff now passes `check-kb --closing`, and `L-###` references in the KB resolve.
+- Baseline counts cover only the container and the operator's records since the first ledger row, by filter or count endpoint, never by pulling full record lists. Teardown compares those counts. `environment.md` records the filter.
+- L3: when the container cannot be private, set each record's visibility to the operator only. An unattended session that starts during the team's working hours writes only when the team cannot see the records; otherwise it does the phases without writes first.
+- "Stop and skip": deleting your own ledger items inside the sandbox is exempt from the "cannot be undone" stop when the dialog names only those items.
+- `mask.js`: selectors become CSS rules that also blur elements rendered later (popovers, dropdowns), until `clear()`. Placeholders that match a pattern are blurred, and `placeholders: true` blurs all of them. Invalid selectors are reported. New "Masking" section in `extraction.md`.
+- `tools.md`: Claude in Chrome notes. Long `javascript_tool` results are read through an offscreen `<article>` and `get_page_text`. Use `api-shapes.js` when `read_network_requests` misses app calls. Never load scripts from a local server in the user's tab. Check state after each click in a background window. Where `save_to_disk` screenshots land.
+
 ## 0.2.0 (2026-10-16)
 
 - Handoff: `pack-kb.mjs` packs the knowledge base into a zip with `BUILD.md`, a build brief for any coding agent. It checks the KB first, leaves out `sandbox/` and `log/` unless `--full`, and needs no dependencies.

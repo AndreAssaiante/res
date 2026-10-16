@@ -4,7 +4,9 @@
 
 Read the script file and pass its full content to the browser's JavaScript tool (`javascript_tool`, `browser_evaluate`, `evaluate_script`). Each script attaches functions to `window.__re` and returns a JSON-serializable result. Save the result as `evidence/EV-###-<script>-<screen>.json`.
 
-A reload clears `window.__re`. Run the script again after every reload or full navigation.
+A reload clears `window.__re`. Run the script again after every reload or full navigation. Never load the scripts from a local server in the user's browser; paste them (`tools.md`).
+
+When the tool cuts long results (Claude in Chrome does near 1,000 characters), read them through the page instead: `tools.md`, "Claude in Chrome notes".
 
 Playwright MCP's `browser_evaluate` expects a function. Wrap the file content: `() => { <file content>; return window.__re.last; }`. Every script stores its latest result in `window.__re.last`.
 
@@ -13,7 +15,7 @@ Playwright MCP's `browser_evaluate` expects a function. Wrap the file content: `
 | `inventory.js` | Runs on load; `__re.inventory()` reruns | Run on each main screen. Large pages: results are capped and say so |
 | `tokens.js` | Runs on load; `__re.tokens({root: '.selector'})` limits to a subtree | Run once per theme. Diff light and dark to find themed tokens |
 | `api-shapes.js` | Installs on load; `__re.api.dump()`, `__re.api.clear()` | Install, clear, perform one action, dump. Records shapes, never headers; keeps short enum-like values of status and type fields unless `__re.api.enumSamples = false` |
-| `mask.js` | `__re.mask.apply({selectors: [...], names: [...], avatars: true})`, `__re.mask.clear()` | Blurs emails, phones, money values, Brazilian tax IDs (CPF, CNPJ), small avatars, the given names and the given selectors |
+| `mask.js` | `__re.mask.apply({selectors: [...], names: [...], avatars: true, placeholders: true})`, `__re.mask.clear()` | Blurs emails, phones, money values, Brazilian tax IDs (CPF, CNPJ), small avatars, the given names, placeholders that match, and the given selectors. Selectors and `placeholders: true` stay as CSS rules until `clear()`. See "Masking" |
 | `annotate.js` | `__re.annotate(['.header', '.toolbar', ...])`, `__re.annotate.clear()` | Numbered outlines; the result lists number, selector, size |
 
 ## Design tokens
@@ -66,6 +68,14 @@ For enums (statuses, priorities, activity types), read the options from the UI m
 - Anatomy: run `annotate.js` with the region selectors, capture, then clear.
 - Use one window size for every screenshot, recorded in `environment.md`. When to resize and when not: `tools.md`.
 - How to write the file depends on the tool: see `tools.md`.
+
+## Masking
+
+- Patterns, names and avatars mark what is on the page when `apply()` runs. Content rendered later (popovers, dropdowns, a list that loads after a form opens, a re-render) is not marked: run `apply()` again right before each screenshot.
+- Selectors become CSS rules that blur matching elements whenever they appear, until `clear()`. Pass the containers that show real data: popovers, menus, lists (`[role=listbox]`, `[role=menu]`, the product's popover class from `read_page` or `inventory.js`). Rules add up across calls; `result.rules` counts them and `result.invalidSelectors` lists the ones rejected.
+- Company configuration (activity type names, lost reasons, custom field labels, pipeline and user names) matches no pattern. Pass the values as `names`, their containers as `selectors`, or crop the screenshot to the part under study.
+- Inputs: values and placeholders that match a pattern are blurred. `placeholders: true` blurs every placeholder, in fields rendered later too; use it when placeholders show configuration or names.
+- Look at each screenshot before saving it. One that shows unmasked data is deleted at once, with the tool's own copy (`tools.md`), and retaken.
 
 ## Drag and drop
 

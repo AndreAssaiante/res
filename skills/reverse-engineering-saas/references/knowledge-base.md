@@ -134,6 +134,7 @@ Initialize the KB as its own git repository (`init-kb.mjs --git`), even inside a
 - It runs `check-kb` first and stops on errors (`--force` packs anyway and says so).
 - It adds `BUILD.md` from `templates/handoff/BUILD.md` if the KB has none. Edit it in the KB to add instructions for a specific team.
 - It leaves out `sandbox/` and `log/`, which hold account and workspace details, and `_templates/`. `--full` includes them.
+- It keeps a copy of `sandbox/ledger.csv` with `object_id` and `location` blanked and URLs replaced by `[url]`. The receiver sees what the study changed and how each change ended, and `check-kb --closing` passes on the unzipped folder. Keep other account details (workspace names, real values) out of the ledger's other columns.
 - `--out <file.zip>` chooses the path.
 
 Send the zip to the user in the chat. The receiver unzips it and gives the folder to a coding agent, starting from `BUILD.md`.

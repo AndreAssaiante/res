@@ -147,6 +147,43 @@ test('mask blurs personal data and clear removes it', async () => {
   assert.equal(await page.evaluate(() => document.querySelectorAll('.__re-masked').length), 0);
 });
 
+test('mask rules cover elements rendered later, and placeholders', async () => {
+  await page.evaluate(script('mask.js'));
+  const result = await page.evaluate(() => {
+    const field = document.createElement('input');
+    field.id = 'owner';
+    field.placeholder = 'maria@cliente.com.br';
+    document.querySelector('main').append(field);
+    return window.__re.mask.apply({ selectors: ['.popover', '..bad'] });
+  });
+  assert.equal(result.byReason['placeholder email'], 1);
+  assert.deepEqual(result.invalidSelectors, ['..bad']);
+  assert.deepEqual(result.rules, { selectors: 1, placeholders: false });
+  const placeholderColor = (id) => page.evaluate((target) => getComputedStyle(document.getElementById(target), '::placeholder').color, id);
+  assert.equal(await placeholderColor('owner'), 'rgba(0, 0, 0, 0)');
+
+  // The .popover rule from the first call stays; placeholders: true adds a rule for every placeholder.
+  await page.evaluate(() => window.__re.mask.apply({ placeholders: true }));
+  const popoverFilter = await page.evaluate(() => {
+    const popover = document.createElement('div');
+    popover.className = 'popover';
+    popover.textContent = 'Lost reason: [customer] churned';
+    const later = document.createElement('input');
+    later.id = 'later';
+    later.placeholder = 'Activity type: Visit';
+    document.body.append(popover, later);
+    return getComputedStyle(popover).filter;
+  });
+  assert.match(popoverFilter, /blur/, 'a popover rendered after apply() is blurred');
+  assert.equal(await placeholderColor('later'), 'rgba(0, 0, 0, 0)');
+
+  await page.evaluate(() => window.__re.mask.clear());
+  assert.equal(await page.evaluate(() => getComputedStyle(document.querySelector('.popover')).filter), 'none');
+  assert.notEqual(await placeholderColor('later'), 'rgba(0, 0, 0, 0)');
+  assert.deepEqual(await page.evaluate(() => window.__re.mask.rules), { selectors: [], placeholders: false });
+  await page.evaluate(() => document.querySelectorAll('#owner, #later, .popover').forEach((element) => element.remove()));
+});
+
 test('annotate outlines regions and reports missing selectors', async () => {
   await page.evaluate(script('annotate.js'));
   const result = await page.evaluate(() => window.__re.annotate(['header', 'main', '.missing']));

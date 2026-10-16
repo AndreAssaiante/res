@@ -218,7 +218,7 @@ Yes. Tell it not to ask you anything. It records what needs you under "Needs hum
 <details>
 <summary><strong>How do I give the result to my developers?</strong></summary>
 
-Ask for the handoff, or wait for the end of the study. The agent sends a zip with the knowledge base and `BUILD.md`. Account details (`sandbox/`, `log/`) stay out of the zip.
+Ask for the handoff, or wait for the end of the study. The agent sends a zip with the knowledge base and `BUILD.md`. Account details (`sandbox/`, `log/`) stay out of the zip, except a copy of the change ledger without object IDs, locations or URLs.
 
 </details>
 
@@ -249,7 +249,7 @@ That depends on the product's terms and your jurisdiction. RES records the relev
 
 ## Status
 
-Version 0.2.0. The method was tested with scenario runs on subagents, before and after each change to the skill, and the scripts with automated tests on Node.js 22 and 24. It has not yet been run end to end on a real product. Example studies of ClickUp and Pipedrive are planned. Reports from real runs are welcome: open a [study report](https://github.com/alextnetto/res/issues/new?template=study_report.yml).
+Version 0.3.0. The method was tested with scenario runs on subagents, before and after each change to the skill, and the scripts with automated tests on Node.js 22 and 24. It has not yet been run end to end on a real product. Example studies of ClickUp and Pipedrive are planned. Reports from real runs are welcome: open a [study report](https://github.com/alextnetto/res/issues/new?template=study_report.yml).
 
 ## Responsible use
 
