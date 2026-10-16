@@ -58,6 +58,8 @@ When the user asked for a test environment and no L1 exists: create L2 if free, 
 
 At L3, "inside the sandbox" means the container plus records the agent created with the `[RE]` prefix that link only to sandbox records (a person created from a sandbox deal). When other members can see the container, remove all A2 records, the container included, at the end of every session, and in unattended mode finish the teardown before the team's working hours.
 
+An unattended L3 session that starts during the team's working hours (from the charter; otherwise 08:00 to 18:00 on weekdays in the account's time zone) writes only when the team cannot see the records: a private container, or records set to operator-only visibility (`references/safety.md`, L3). The container's name may stay visible. Otherwise do the phases without writes first (recon, map) and put the writes under "Next actions" for a session outside working hours. In both cases keep the sandbox up as briefly as possible and tear it down in the same session. Record the start time and the choice in `environment.md`.
+
 ### Action classes and what each level allows
 
 | Class | Examples |
@@ -109,20 +111,22 @@ Check persistence by reloading. Never experiment on shared views: rebuild the ca
 
 Do not click through. Log the item as `blocked` and move on when you see: billing, upgrade or trial dialogs; any "send", "invite", "notify", "share", "apply to all" or "cannot be undone"; login, 2FA or CAPTCHA prompts; a location mismatch; any change that appears outside the sandbox.
 
+Exception: deleting your own ledger items inside the sandbox. Their delete dialogs often say the action cannot be undone. Confirm when the dialog names only those items, sends or notifies nothing, and the write gate passes. A dialog that would also delete or change anything else is still a stop.
+
 In unattended mode never ask the user. Write the item under "Needs human" in `STATUS.md` and continue. "Don't ask me anything" changes how blocks are reported. It does not widen what you may touch.
 
 After a mistake: undo it at once if the undo itself reaches nobody, then add a ledger row with class `incident`, what happened and what remains. If the undo would notify someone again (unassigning, deleting a comment), leave it and write it under "Needs human". Procedure: `references/safety.md`.
 
 ### Preflight: before the first write at L2 or L3
 
-Record in `environment.md`: members who could be notified; active automations, webhooks, integrations, email and calendar sync in the write scope; plan and trial end date; baseline counts of the main record types. If any automation, webhook, integration or sync would fire on records in the write scope, do not write there. Checklist: `references/safety.md`.
+Record in `environment.md`: members who could be notified; active automations, webhooks, integrations, email and calendar sync in the write scope; plan and trial end date; baseline counts of the container and of the operator's own records, by filter or count endpoint, never by pulling full record lists. If any automation, webhook, integration or sync would fire on records in the write scope, do not write there. Checklist: `references/safety.md`.
 
 ### Data rules
 
 - Fake data only. Prefix every created name with `[RE]`. Emails at `example.com`. No real customer or teammate names.
 - KB text never contains real personal or customer data. When documenting production configuration (field options, automation conditions, filters), replace real values with placeholders such as `[customer]` or `[person]`.
 - Assign records to the operator or to nobody.
-- At L3 and L4, run `scripts/page/mask.js` before each screenshot that can show real data. A screenshot that shows unmasked personal data is deleted at once and retaken; it never enters the KB.
+- At L3 and L4, run `scripts/page/mask.js` before each screenshot that can show real data. Pass the containers of popovers, menus and lists as `selectors`: they stay masked when they render later. Company configuration (type names, reasons, field labels) matches no pattern: pass it as `names` or crop it out. A screenshot that shows unmasked personal data is deleted at once and retaken; it never enters the KB.
 
 Procedures for each level, the ledger format, teardown and incidents: `references/safety.md`.
 
@@ -172,7 +176,7 @@ Paste the file content into the browser's JavaScript tool. Each script returns J
 | `scripts/page/inventory.js` | Framework, component tag names, test IDs, ARIA roles, internal route patterns, third-party SDKs |
 | `scripts/page/tokens.js` | CSS variables and the most frequent colors, type sizes, radii, spacing and shadows |
 | `scripts/page/api-shapes.js` | Installs a recorder; `__re.api.dump()` returns endpoint templates and JSON shapes; set `__re.api.enumSamples = false` to drop the short enum values too |
-| `scripts/page/mask.js` | Blurs emails, phones, money, Brazilian tax IDs, small avatars, given names and given selectors; `__re.mask.clear()` removes it |
+| `scripts/page/mask.js` | Blurs emails, phones, money, Brazilian tax IDs, small avatars, given names, matching placeholders, and given selectors as CSS rules that also cover elements rendered later; `__re.mask.clear()` removes it |
 | `scripts/page/annotate.js` | Numbered outlines on given elements for anatomy screenshots |
 
 Tool-specific notes (saving screenshots, network, profiles, drag and drop): `references/extraction.md` and `references/tools.md`.
@@ -184,7 +188,7 @@ Tool-specific notes (saving screenshots, network, profiles, drag and drop): `ref
 3. Write `log/<date>-s<NN>.md`.
 4. Run `node <skill>/scripts/check-kb.mjs <kb>` and fix every error.
 5. At the end of the study only: tear down from the ledger, compare baseline counts, list residuals in `STATUS.md`, then run `check-kb --closing`.
-6. Hand off: run `node <skill>/scripts/pack-kb.mjs <kb>` and send the zip to the user in the chat. Attach it with the agent's file-sending tool when there is one; otherwise give its path. The zip holds the KB and `BUILD.md`, a brief any coding agent can follow, and leaves out `sandbox/` and `log/`. With the zip, send the three-line summary from `STATUS.md`, the "Needs human" list, and one line: "Unzip it and give the folder to a coding agent, starting at BUILD.md."
+6. Hand off: run `node <skill>/scripts/pack-kb.mjs <kb>` and send the zip to the user in the chat. Attach it with the agent's file-sending tool when there is one; otherwise give its path. The zip holds the KB and `BUILD.md`, a brief any coding agent can follow, and leaves out `sandbox/` and `log/` except a copy of the ledger without object IDs, locations or URLs. With the zip, send the three-line summary from `STATUS.md`, the "Needs human" list, and one line: "Unzip it and give the folder to a coding agent, starting at BUILD.md."
 
 The study ends when coverage is complete or the user says to stop. When the user stops early, write the Phase 6 files from what exists, close, and pack: `STATUS.md` tells the reader what is missing. At L1 the trial account may keep its fixtures as `kept` ("trial kept for the developers"); ending the trial is the user's action. `pack-kb` runs the regular check, so rows marked `human` do not block the handoff; list them under "Needs human".
 

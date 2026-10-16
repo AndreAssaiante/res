@@ -30,8 +30,12 @@ Before every A2, A3 or A4 action the screen must show these values.
 | Integrations (chat, email, calendar, Zapier) | | |
 | Email and calendar sync | | |
 | Plan and trial | | |
+| Who can see the sandbox and its records | | |
+| Session start and the team's working hours | | |
 
 ## Baseline counts
 
-| Record type | Start | End |
-|---|---|---|
+Only the sandbox container, and the operator's records added or changed since the first ledger row. Use the same filter at start and end.
+
+| Record type | Filter | Start | End |
+|---|---|---|---|

@@ -236,13 +236,33 @@ test('pack-kb writes a valid zip with BUILD.md and without account details', () 
   assert.ok(zip.names.includes('re-acme/BUILD.md'));
   assert.ok(zip.names.includes('re-acme/clone/prd.md'));
   assert.ok(zip.names.includes('re-acme/evidence/index.csv'));
-  assert.ok(!zip.names.some((name) => /\/(sandbox|log|_templates)\//.test(name) || name.endsWith('.gitkeep')));
+  assert.deepEqual(zip.names.filter((name) => name.includes('/sandbox/')), ['re-acme/sandbox/ledger.csv'], 'only the ledger is kept from sandbox/');
+  assert.ok(!zip.names.some((name) => /\/(log|_templates)\//.test(name) || name.endsWith('.gitkeep')));
   assert.match(zip.build, /# Build brief: Acme CRM clone/);
   assert.doesNotMatch(zip.build, /\{\{/);
 
   const full = run('pack-kb.mjs', kb, '--out', join(dir, 'full.zip'), '--full');
   assert.equal(full.status, 0, full.stderr);
-  assert.ok(readZip(join(dir, 'full.zip')).names.includes('re-acme/sandbox/ledger.csv'));
+  assert.ok(readZip(join(dir, 'full.zip')).names.includes('re-acme/sandbox/environment.md'));
+});
+
+test('an unzipped handoff passes check-kb --closing; its ledger has no IDs, locations or URLs', () => {
+  write('sandbox/ledger.csv', 'id,time,class,action,object,location,object_id,before,undo,status,note\nL-001,2026-10-16T10:00:00Z,A2,create,"task ""[RE] typical""",Acme Corp > Sales > 🧪 [RE] Sandbox,4471,,Delete it at https://acme.example.com/deal/4471,removed,verified by search\n');
+  appendFileSync(join(kb, 'STATUS.md'), '- L-001 removed and verified.\n');
+  write('00-charter.md', '# Charter: Acme CRM\n\nGoal: rebuild the deals board.\n');
+  const out = join(dir, 'handoff.zip');
+  const packed = run('pack-kb.mjs', kb, '--out', out);
+  assert.equal(packed.status, 0, packed.stdout + packed.stderr);
+  assert.match(packed.stdout, /Kept sandbox\/ledger\.csv without object IDs/);
+  const target = join(dir, 'unzipped');
+  const unzip = spawnSync('python3', ['-c', 'import sys,zipfile\nzipfile.ZipFile(sys.argv[1]).extractall(sys.argv[2])', out, target], { encoding: 'utf8' });
+  assert.equal(unzip.status, 0, unzip.stderr);
+
+  const ledger = readFileSync(join(target, 're-acme', 'sandbox', 'ledger.csv'), 'utf8');
+  assert.equal(ledger, 'id,time,class,action,object,location,object_id,before,undo,status,note\nL-001,2026-10-16T10:00:00Z,A2,create,"task ""[RE] typical""",,,,Delete it at [url],removed,verified by search\n');
+  const result = run('check-kb.mjs', join(target, 're-acme'), '--closing');
+  assert.equal(result.status, 0, result.stdout);
+  assert.match(result.stdout, /Ledger: 1 rows, 0 open/);
 });
 
 test('pack-kb refuses a KB with errors unless --force', () => {

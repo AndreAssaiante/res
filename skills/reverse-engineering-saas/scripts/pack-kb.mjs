@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Packs a knowledge base into a zip the user can hand to any coding agent.
 // Adds BUILD.md (the build brief) to the KB if it is missing. Leaves out
-// sandbox/ and log/ (account details) unless --full. No dependencies.
+// sandbox/ and log/ (account details) unless --full, but keeps a copy of the
+// ledger without object IDs, locations or URLs, so the unzipped folder passes
+// check-kb and shows how the study left the product. No dependencies.
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve } from 'node:path';
@@ -11,6 +13,8 @@ import { deflateRawSync } from 'node:zlib';
 const USAGE = 'Usage: node pack-kb.mjs <kb-dir> [--out <file.zip>] [--full] [--force] [--help]';
 const ALWAYS_SKIP = new Set(['.git', 'node_modules', '_templates', '.DS_Store', '.gitkeep']);
 const PRIVATE_DIRS = ['sandbox', 'log'];
+const LEDGER = 'sandbox/ledger.csv';
+const LEDGER_PRIVATE_COLUMNS = ['location', 'object_id'];
 
 const CRC_TABLE = new Uint32Array(256).map((_, n) => {
   let c = n;
@@ -102,6 +106,47 @@ function walk(dir, root, skipDirs) {
   return files;
 }
 
+// Same CSV reader as check-kb.mjs.
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let quoted = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    if (quoted) {
+      if (char === '"' && text[i + 1] === '"') {
+        field += '"';
+        i += 1;
+      } else if (char === '"') quoted = false;
+      else field += char;
+    } else if (char === '"') quoted = true;
+    else if (char === ',') {
+      row.push(field);
+      field = '';
+    } else if (char === '\n' || char === '\r') {
+      if (char === '\r' && text[i + 1] === '\n') i += 1;
+      row.push(field);
+      if (row.some((cell) => cell !== '')) rows.push(row);
+      row = [];
+      field = '';
+    } else field += char;
+  }
+  row.push(field);
+  if (row.some((cell) => cell !== '')) rows.push(row);
+  return rows;
+}
+
+const csvCell = (cell) => (/[",\r\n]/.test(cell) ? `"${cell.replaceAll('"', '""')}"` : cell);
+
+// The ledger as the zip holds it: object IDs and locations blanked, URLs replaced.
+function sanitizedLedger(path) {
+  const [header = [], ...rows] = parseCsv(readFileSync(path, 'utf8'));
+  const blank = new Set(LEDGER_PRIVATE_COLUMNS.map((column) => header.indexOf(column)).filter((index) => index >= 0));
+  const clean = rows.map((cells) => cells.map((cell, index) => (blank.has(index) ? '' : cell.replace(/\b(?:https?|wss?):\/\/[^\s",]+/gi, '[url]'))));
+  return Buffer.from(`${[header, ...clean].map((cells) => cells.map(csvCell).join(',')).join('\n')}\n`);
+}
+
 function parseArgs(argv) {
   const options = { full: false, force: false };
   for (let i = 0; i < argv.length; i += 1) {
@@ -154,14 +199,17 @@ function main() {
   }
 
   const skipped = options.full ? [] : PRIVATE_DIRS.filter((dir) => existsSync(join(kb, dir)));
-  const files = walk(kb, kb, skipped);
   const folder = basename(kb);
-  const zip = buildZip(files.map((file) => ({ name: `${folder}/${file.split('\\').join('/')}`, data: readFileSync(join(kb, file)) })));
+  const entries = walk(kb, kb, skipped).map((file) => ({ name: `${folder}/${file.split('\\').join('/')}`, data: readFileSync(join(kb, file)) }));
+  const ledger = skipped.includes('sandbox') && existsSync(join(kb, LEDGER));
+  if (ledger) entries.push({ name: `${folder}/${LEDGER}`, data: sanitizedLedger(join(kb, LEDGER)) });
+  const zip = buildZip(entries);
   const out = resolve(options.out || join(dirname(kb), `${folder}-handoff-${date}.zip`));
   writeFileSync(out, zip);
 
   console.log(`Handoff: ${out}`);
-  console.log(`${files.length} files, ${(zip.length / 1024).toFixed(0)} KB.${skipped.length ? ` Left out: ${skipped.map((dir) => `${dir}/`).join(', ')} (use --full to include).` : ''}`);
+  console.log(`${entries.length} files, ${(zip.length / 1024).toFixed(0)} KB.${skipped.length ? ` Left out: ${skipped.map((dir) => `${dir}/`).join(', ')} (use --full to include).` : ''}`);
+  if (ledger) console.log(`Kept ${LEDGER} without object IDs, locations or URLs.`);
   if (check.status !== 0) console.log('Packed with --force: check-kb reported errors.');
   console.log('Send this file to the user. Any coding agent can start from BUILD.md inside it.');
 }
