@@ -11,7 +11,7 @@
 [![Node.js 22+](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](#quick-start)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-[Quick start](#quick-start) · [How RES works](#how-res-works) · [What you get](#what-you-get) · [Safety model](#safety-model) · [FAQ](#faq) · [Documentation](#documentation)
+[Quick start](#quick-start) · [How RES works](#how-res-works) · [What you get](#what-you-get) · [Examples](#examples) · [Safety model](#safety-model) · [FAQ](#faq) · [Documentation](#documentation)
 
 <code>claude plugin marketplace add alextnetto/res</code>
 
@@ -169,6 +169,17 @@ A production barrier:
 - Evidence: [doc SRC-021]
 ```
 
+## Examples
+
+Two end-to-end studies, run by Claude Code with Claude in Chrome without a person at the keyboard:
+
+| Product | Environment | Result | Read |
+|---|---|---|---|
+| ClickUp: board, task view, custom fields | L2, a new free workspace | 55 rules, 19 components, 14 production barriers | [Report](https://alextnetto.github.io/res/examples/clickup/REPORT.html) · [Knowledge base](examples/clickup/) |
+| Pipedrive: pipeline, deals, next-activity rule, won and lost | L3, a sandbox pipeline in a production account, removed at the end | 46 rules, 8 components, 15 production barriers | [Report](https://alextnetto.github.io/res/examples/pipedrive/REPORT.html) · [Knowledge base](examples/pipedrive/) |
+
+Each folder is the unzipped handoff. Notes on trademarks and terms: [examples/README.md](examples/README.md).
+
 ## Safety model
 
 | Level | Environment | What the agent may change |
@@ -254,7 +265,7 @@ That depends on the product's terms and your jurisdiction. RES records the relev
 
 ## Status
 
-Version 0.3.0. The method was tested with scenario runs on subagents, before and after each change to the skill, and the scripts with automated tests on Node.js 22 and 24. It has not yet been run end to end on a real product. Example studies of ClickUp and Pipedrive are planned. Reports from real runs are welcome: open a [study report](https://github.com/alextnetto/res/issues/new?template=study_report.yml).
+Version 0.3.0. The method was tested with scenario runs on subagents, before and after each change to the skill, and the scripts with automated tests on Node.js 22 and 24. Two end-to-end studies on real products (ClickUp at L2, Pipedrive at L3) are in [examples/](examples/). Version 0.3.0 fixes the gaps the Pipedrive study found; the ClickUp study's are tracked in [an issue](https://github.com/alextnetto/res/issues/5). Reports from real runs are welcome: open a [study report](https://github.com/alextnetto/res/issues/new?template=study_report.yml).
 
 ## Responsible use
 

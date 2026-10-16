@@ -2,7 +2,7 @@
 
 ## 0.3.0 (2026-10-16)
 
-Fixes for the gaps found by the first real study (Pipedrive, L3, `examples/pipedrive/`).
+First end-to-end studies on real products, published in `examples/` (ClickUp at L2, Pipedrive at L3, each with `REPORT.html`), and fixes for the gaps the Pipedrive study found.
 
 - Handoff: `pack-kb.mjs` keeps `sandbox/ledger.csv` in the zip with object IDs and locations blanked and URLs replaced by `[url]`. An unzipped handoff now passes `check-kb --closing`, and `L-###` references in the KB resolve.
 - Baseline counts cover only the container and the operator's records since the first ledger row, by filter or count endpoint, never by pulling full record lists. Teardown compares those counts. `environment.md` records the filter.
