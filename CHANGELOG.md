@@ -9,6 +9,7 @@ Fixes for the gaps found by the first real study (Pipedrive, L3, `examples/piped
 - L3: when the container cannot be private, set each record's visibility to the operator only. An unattended session that starts during the team's working hours writes only when the team cannot see the records; otherwise it does the phases without writes first.
 - "Stop and skip": deleting your own ledger items inside the sandbox is exempt from the "cannot be undone" stop when the dialog names only those items.
 - `mask.js`: selectors become CSS rules that also blur elements rendered later (popovers, dropdowns), until `clear()`. Placeholders that match a pattern are blurred, and `placeholders: true` blurs all of them. Invalid selectors are reported. New "Masking" section in `extraction.md`.
+- Report: `build-report.mjs` turns the knowledge base into `REPORT.html`, the main report a person reads. One self-contained page (images embedded, IDs linked, no scripts, no network), with summary, decisions, barriers, build plan, screens, rules, data model, tokens and an evidence gallery. `pack-kb.mjs` writes it and puts it in the zip, and the skill sends it with the zip.
 - `tools.md`: Claude in Chrome notes. Long `javascript_tool` results are read through an offscreen `<article>` and `get_page_text`. Use `api-shapes.js` when `read_network_requests` misses app calls. Never load scripts from a local server in the user's tab. Check state after each click in a background window. Where `save_to_disk` screenshots land.
 
 ## 0.2.0 (2026-10-16)

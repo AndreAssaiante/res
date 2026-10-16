@@ -265,6 +265,39 @@ test('an unzipped handoff passes check-kb --closing; its ledger has no IDs, loca
   assert.match(result.stdout, /Ledger: 1 rows, 0 open/);
 });
 
+test('build-report writes one self-contained page with linked IDs and escaped content', () => {
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+  writeFileSync(join(kb, 'evidence/EV-001-board.png'), png);
+  writeFileSync(join(kb, 'evidence/EV-002-api.json'), '{}');
+  appendFileSync(join(kb, 'evidence/index.csv'), 'EV-001,2026-10-16,s01,/board,board anatomy,yes\nEV-002,2026-10-16,s01,/board,api shapes,n/a\n');
+  appendFileSync(join(kb, 'inventory/features.md'), '| F-001 | Deals | Board | Free | P1 | S-001 | BR-001 | done | |\n');
+  appendFileSync(join(kb, 'inventory/coverage.md'), '| F-001 Board | done | partial | blocked: drag | todo | n/a | done | done | done | done | |\n');
+  write('screens/S-001-board.md', '# S-001 Board\nRules: R-001\n\n![Board](../evidence/EV-001-board.png)\n\n- Item\n  - Nested item\n\n## Not tested\n- Drag.\n');
+  write('rules/board.md', '# Rules: board\n\n### R-001 Cards show <script>alert(1)</script> as text\n- Evidence: [obs EV-001]\n');
+  appendFileSync(join(kb, 'clone/barriers.md'), '\n### BR-001 Example barrier\n- Severity: blocks launch (until approved)\n- Evidence: [doc SRC-001]\n');
+  appendFileSync(join(kb, 'sources.md'), '| SRC-001 | Docs | https://example.com/docs | docs | 2026-10-16 | x |\n');
+  const result = run('build-report.mjs', kb);
+  assert.equal(result.status, 0, result.stderr);
+  const html = readFileSync(join(kb, 'REPORT.html'), 'utf8');
+  assert.match(html, /<title>Acme CRM: reverse engineering report<\/title>/);
+  for (const id of ['summary', 'barriers', 'screens', 'rules', 'evidence', 'S-001', 'R-001', 'BR-001', 'EV-001', 'EV-002', 'F-001', 'SRC-001']) {
+    assert.match(html, new RegExp(`id="${id}"`), `anchor ${id}`);
+  }
+  assert.match(html, /<a href="#R-001">R-001<\/a>/);
+  assert.match(html, /<img src="data:image\/png;base64,/);
+  assert.equal((html.match(/data:image\/png;base64,/g) || []).length, 1, 'each image is embedded once');
+  assert.match(html, /<span class="chip red">blocks launch<\/span> \(until approved\)/);
+  assert.match(html, /<span class="chip amber">blocked: drag<\/span>/);
+  assert.match(html, /<ul><li>Item<ul><li>Nested item<\/li><\/ul><\/li>/);
+  assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.doesNotMatch(html, /<script|<link|https?:\/\/[^"]*\.(js|css)/i, 'no scripts or external resources');
+  assert.equal(run('build-report.mjs', '--help').status, 0);
+
+  const out = join(dir, 'report.zip');
+  assert.equal(run('pack-kb.mjs', kb, '--out', out).status, 0);
+  assert.ok(readZip(out).names.includes('re-acme/REPORT.html'));
+});
+
 test('pack-kb refuses a KB with errors unless --force', () => {
   write('rules/a.md', '### R-001 No evidence\n- Given x\n');
   const refused = run('pack-kb.mjs', kb, '--out', join(dir, 'x.zip'));
