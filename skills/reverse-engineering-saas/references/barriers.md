@@ -35,6 +35,7 @@ Use web search and web fetch, as in recon. Add each source to `sources.md`.
 | Provider developer docs (Google, Meta, Slack, payment and banking providers) | The approval process, its requirements, published review times and fees |
 | Regulator sites in the target market | Licenses, authorizations, registration steps |
 | `inventory.js` third-party SDK list and network origins | Vendors visible in the product's own pages |
+| The product's OAuth consent screens (open, record, cancel; never approve) | The exact scopes each integration requests, which decide the verification level |
 
 ## Recording a barrier
 
@@ -46,6 +47,7 @@ One section per barrier in `clone/barriers.md`. IDs `BR-###`.
 - Blocks: F-014 (WhatsApp notifications)
 - Gatekeeper: Meta, WhatsApp Business Platform
 - Severity: blocks feature
+- Market weight: required to sell (buyers in the target market expect WhatsApp in a CRM) [inf] Q-040
 - What it takes: business verification, a phone number on the platform, approved message templates, per-message fees
 - Lead time and cost: [doc SRC-021]
 - Mitigation: start verification in month one; launch with email notifications until approved
@@ -61,6 +63,8 @@ Severity values:
 | `adds lead time` | Cleared by a process with a waiting period; start it early |
 | `adds cost` | Cleared by paying (certification, fees, a licensed partner) |
 | `moat` | The clone can launch but will not match it soon (data, network, content) |
+
+Severity says what the barrier blocks. Market weight says how much that matters to buyers in the target market: `required to sell`, `important`, `minor`. A barrier that only blocks one feature is a launch problem when that feature is required to sell; order the PRD by both.
 
 Every barrier cites evidence, like a rule. Interpretations without a source are `[inf]` with a `Q-###`.
 

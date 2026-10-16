@@ -21,7 +21,7 @@ Do not use this skill when the source code is available (read the code), for nat
 ## Start or resume
 
 - **KB exists:** read `STATUS.md`, `sandbox/environment.md` and the `open` rows of `sandbox/ledger.csv`. Close or verify every open row before new exploration. Run `node <skill>/scripts/check-kb.mjs <kb>`.
-- **No KB:** run `node <skill>/scripts/init-kb.mjs <kb> --product "<Name>" --git`. Default location: `./re-<product>/`. Then fill `00-charter.md` from the user's request.
+- **No KB:** run `node <skill>/scripts/init-kb.mjs <kb> --product "<Name>" --git`. Default location: `./re-<product>/`. Then fill `00-charter.md` from the user's request. Artifact templates (screen, component, entity, flow, rules, topic, session log) are copied to `<kb>/_templates/`.
 - **Objects from earlier work that are not in this ledger** (an old sandbox list, test records): do not touch them. List them in `STATUS.md` under "Residuals" as pre-existing.
 - **A session that ran without this skill** (changes made, nothing recorded): follow "Adopting an unrecorded session" in `references/safety.md` before anything else.
 
@@ -78,7 +78,7 @@ At L3, "inside the sandbox" means the container plus records the agent created w
 | A4 | Yes | Creating the workspace, then changes inside it only | No | No |
 | A5 | No | No | No | No |
 
-A5 is forbidden at every level. Tests that need a second person (collaboration, permissions, notifications) go to "Needs human": they belong at L1, where the user adds a second account of their own. Adding a member to production is the user's decision (often a paid seat). Features gated by a plan the environment lacks are `blocked: plan` in coverage; starting a trial is the user's decision.
+A5 is forbidden at every level. Integrations: the agent may open an OAuth consent screen to record the scopes it asks for, then cancel; it never approves one. At L1 the user connects test accounts they own (a test mailbox, a test calendar), and the agent may then exercise the integration between those accounts only. Tests that need a second person (collaboration, permissions, notifications) go to "Needs human": they belong at L1, where the user adds a second account of their own. Adding a member to production is the user's decision (often a paid seat). Features gated by a plan the environment lacks are `blocked: plan` in coverage; starting a trial is the user's decision.
 
 An automation that emails or notifies only the operator is A4, not A5. Disable time-triggered automations before the session ends.
 
@@ -150,7 +150,7 @@ A clone that cannot launch is not a clone. Scan for barriers during recon and up
 - Distribution gatekeepers (app stores, bulk email and SMS rules).
 - What code cannot copy: data, content, network effects, trademarks.
 
-Record each one as `BR-###` in `clone/barriers.md` with category, features blocked, gatekeeper, severity (`blocks launch`, `blocks feature`, `adds lead time`, `adds cost`, `moat`), lead time and cost, mitigation and evidence. Put launch blockers and long approvals first in the PRD build order. This is not legal advice: a legal reading without a source is `[inf]` with a question for counsel. Categories, sources and format: `references/barriers.md`.
+Record each one as `BR-###` in `clone/barriers.md` with category, features blocked, gatekeeper, severity (`blocks launch`, `blocks feature`, `adds lead time`, `adds cost`, `moat`), market weight (how much buyers in the target market need the blocked feature), lead time and cost, mitigation and evidence. Put launch blockers and long approvals first in the PRD build order. This is not legal advice: a legal reading without a source is `[inf]` with a question for counsel. Categories, sources and format: `references/barriers.md`.
 
 ## Evidence tags
 

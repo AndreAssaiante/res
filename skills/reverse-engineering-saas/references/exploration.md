@@ -142,7 +142,7 @@ After every change, reload. Then classify it:
 
 Each gets a file in `topics/` when explored:
 
-search, notifications (in-app, email, push: from docs when not observable), permissions and roles, settings and their scopes, import and export, integrations, automations, AI features, onboarding and empty-state education, plan gating and limits, trash and restore, history and audit log, sharing and public links, templates, time zones and locale, currency and number formats, keyboard shortcuts, offline behavior, mobile and responsive, hidden writes.
+search, notifications (in-app, email, push: from docs when not observable), developer platform (public API, OAuth apps, webhooks, marketplace review: a clone of an ecosystem must rebuild it), permissions and roles, settings and their scopes, import and export, integrations, automations, AI features, onboarding and empty-state education, plan gating and limits, trash and restore, history and audit log, sharing and public links, templates, time zones and locale, currency and number formats, keyboard shortcuts, offline behavior, mobile and responsive, hidden writes.
 
 ## Phase 6: Synthesis
 

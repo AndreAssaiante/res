@@ -7,8 +7,8 @@ Not legal advice. A legal reading without a source is `[inf]` with a question fo
 
 Launch blockers first. One row per barrier; details below.
 
-| Barrier | Category | Severity | Blocks | Lead time |
-|---|---|---|---|---|
+| Barrier | Category | Severity | Market weight | Blocks | Lead time |
+|---|---|---|---|---|---|
 
 <!-- Example section:
 ### BR-001 WhatsApp messages need Meta business verification
@@ -16,6 +16,7 @@ Launch blockers first. One row per barrier; details below.
 - Blocks: F-014
 - Gatekeeper: Meta, WhatsApp Business Platform
 - Severity: blocks feature
+- Market weight: required to sell
 - What it takes: business verification, approved message templates, per-message fees
 - Lead time and cost: [doc SRC-021]
 - Mitigation: start verification in month one; launch with email notifications
