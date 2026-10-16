@@ -184,7 +184,9 @@ Tool-specific notes (saving screenshots, network, profiles, drag and drop): `ref
 3. Write `log/<date>-s<NN>.md`.
 4. Run `node <skill>/scripts/check-kb.mjs <kb>` and fix every error.
 5. At the end of the study only: tear down from the ledger, compare baseline counts, list residuals in `STATUS.md`, then run `check-kb --closing`.
-6. Hand off: run `node <skill>/scripts/pack-kb.mjs <kb>` and send the zip to the user in the chat. Attach it with the agent's file-sending tool when there is one; otherwise give its path. The zip holds the KB and `BUILD.md`, a brief any coding agent can follow, and leaves out `sandbox/` and `log/`. When the user asks for the handoff before the end, pack the KB as it is: `STATUS.md` tells the reader what is missing.
+6. Hand off: run `node <skill>/scripts/pack-kb.mjs <kb>` and send the zip to the user in the chat. Attach it with the agent's file-sending tool when there is one; otherwise give its path. The zip holds the KB and `BUILD.md`, a brief any coding agent can follow, and leaves out `sandbox/` and `log/`. With the zip, send the three-line summary from `STATUS.md`, the "Needs human" list, and one line: "Unzip it and give the folder to a coding agent, starting at BUILD.md."
+
+The study ends when coverage is complete or the user says to stop. When the user stops early, write the Phase 6 files from what exists, close, and pack: `STATUS.md` tells the reader what is missing. At L1 the trial account may keep its fixtures as `kept` ("trial kept for the developers"); ending the trial is the user's action. `pack-kb` runs the regular check, so rows marked `human` do not block the handoff; list them under "Needs human".
 
 Every ledger row ends the session as `restored`, `removed`, `fixture` (test data left for the next session), `kept` (the user decided to keep it) or `human` (only the user can resolve it; the note says what to do). `--closing` fails on `open`, `fixture` and `human`.
 
