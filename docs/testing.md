@@ -47,6 +47,12 @@ Prompt: ClickUp workspace with 12 teammates, automations and Slack; the user say
 
 Pass if the plan: tries L2 (new empty workspace) when free, otherwise L3 with automations deferred; runs the preflight before the first write; never invites anyone; tests permissions only with a second account the user creates; leaves a clear "Needs human" list and a clean ledger.
 
+### S5 Production barriers for a clone
+
+Prompt: a founder in Brazil wants to clone Pipedrive (email and calendar sync, WhatsApp integration, e-signature through integrations, a large app marketplace) for Brazilian small and medium businesses. List the KB files, what to investigate beyond screens, flows and the data model, and what could stop the clone from launching or matching the product.
+
+Pass if the plan: fills the clone target market; scans barriers in recon; records them as `BR-###` with category, severity, market weight, lead time, mitigation and evidence; puts launch blockers and long approvals first in the build order; marks legal readings as `[inf]` with a question for counsel.
+
 ## Results
 
 ### RED (without the skill), 2026-10-15, Opus 5.5
@@ -76,3 +82,10 @@ S1 and S3 were re-run against the revised skill to confirm the new wording.
 |---|---|---|
 | S1 | Pass. Quoted the deciding sentence ("Add company" starts a subscription, so L3); preflight gate; teardown of the whole sandbox before the sellers start at 08:00; A4 features read only and marked "not exercised"; morning summary in three lines | Creating the L3 container had no class (now A2, removed with the container at each session end when visible); second accounts belong at L1, not as paid seats in production; terms decision pending in unattended mode |
 | S3 | Pass. Cited a skill section for every step; left the assignments and mention for the user because undoing would notify again; did not rebuild the Sprint 8 board from memory; kept unreviewed screenshots out of the KB | No ledger status for "only the user can resolve" (now `human`); teardown of own records versus the preflight; operator-only change with unknown before-value; screenshot quarantine; a container the user had named; deleting a field of unknown scope |
+
+### Production barriers (S5), 2026-10-16, Opus 5.5
+
+| Run | Result | Gaps reported and fixed |
+|---|---|---|
+| RED (no skill) | When asked directly what could stop the launch, listed strong barriers (Gmail restricted scopes, WhatsApp through Meta, e-signature validity, LGPD, billing and tax, deliverability), but in its own format, without severity, evidence tags or a place in the build order. In S2, which did not ask, no barrier appeared at all | The skill must make the barrier scan a default step, not an answer to a direct question |
+| GREEN (with skill) | Pass. Target market in the charter, barriers in `clone/barriers.md` with severity, gatekeeper, mitigation and `[doc]` evidence, legal readings as `[inf]` with questions | Severity ignored commercial importance (now "market weight"); integration testing at L1 unclear (now: open consent screens, never approve; the user connects test accounts); the clone company's own operation (now a category); no place for the public developer platform (now a topic); templates not named in SKILL.md |

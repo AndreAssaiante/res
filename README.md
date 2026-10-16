@@ -1,5 +1,9 @@
 # RES: Reverse Engineering SaaS
 
+[![test](https://github.com/alextnetto/res/actions/workflows/test.yml/badge.svg)](https://github.com/alextnetto/res/actions/workflows/test.yml)
+[![release](https://img.shields.io/github/v/release/alextnetto/res)](https://github.com/alextnetto/res/releases)
+[![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 An agent skill for studying a SaaS web product (ClickUp, Pipedrive, any web app) through the browser and turning it into a knowledge base your team can use to rebuild the product and take it to production.
 
 The agent explores the product in a test environment, records every change it makes, writes what it learns to files with evidence for each statement, and lists what could stop the clone from launching.
@@ -52,6 +56,17 @@ The agent creates the knowledge base with `init-kb.mjs`, works through the phase
 
 ## How it works
 
+```mermaid
+flowchart LR
+    A[Charter] --> B[Safe environment<br/>and preflight]
+    B --> C[Public docs<br/>and barrier scan]
+    C --> D[Map screens]
+    D --> E[Deep dive<br/>one feature at a time]
+    E -->|next feature| E
+    E --> F[Synthesis:<br/>PRD, parity, barriers]
+    F --> G[Close:<br/>restore and check]
+```
+
 | Phase | What happens |
 |---|---|
 | 1 Charter | Goal, scope, priorities and the clone's target market |
@@ -98,6 +113,35 @@ A production barrier:
 
 `[obs ...]` is something the agent saw, `[net ...]` a network capture, `[doc ...]` public documentation, `[inf]` an inference with an open question.
 
+## FAQ
+
+**Will it change my production data?** Only inside a sandbox you allowed, and every change is recorded and removed at the end. Without permission to write, it only observes. Messages, invites, mentions of other people and billing actions are forbidden at every level.
+
+**Does it need my password?** No. The agent never types passwords or creates accounts. You log in, preferably to a trial account in a separate browser profile.
+
+**Which agents and browsers work?** Any agent that reads skills from disk and can drive a browser and run JavaScript in the page. It was written for Claude Code; the method was tested with Claude Code subagents and the page scripts in headless Chromium. Claude in Chrome, Playwright MCP and Chrome DevTools MCP are covered in `references/tools.md`.
+
+**Can I leave it running overnight?** Yes. Tell it not to ask you anything. It records what needs you under "Needs human" in `STATUS.md`, keeps working on the rest, and restores what it changed before it stops.
+
+**Does it work for desktop or mobile apps?** Not well. It needs the DOM and the network. For binaries and Electron internals, use [REA](https://github.com/morluto/rea).
+
+**Is copying a product legal?** That depends on the product's terms and your jurisdiction. RES records the relevant terms clause, rebuilds from behavior instead of copying assets, and flags legal questions for counsel. It does not give legal advice.
+
+## Documentation
+
+| Document | For |
+|---|---|
+| [SKILL.md](skills/reverse-engineering-saas/SKILL.md) | The rules the agent follows: phases, safety, evidence, close |
+| [references/safety.md](skills/reverse-engineering-saas/references/safety.md) | Environment setup, preflight, ledger, teardown, incidents |
+| [references/exploration.md](skills/reverse-engineering-saas/references/exploration.md) | Recon, mapping, per-screen checklist, fixtures, rule probing, synthesis |
+| [references/barriers.md](skills/reverse-engineering-saas/references/barriers.md) | Production barriers: categories, sources, format |
+| [references/knowledge-base.md](skills/reverse-engineering-saas/references/knowledge-base.md) | Knowledge base layout, IDs, evidence, checks |
+| [references/extraction.md](skills/reverse-engineering-saas/references/extraction.md) | Page scripts, design tokens, component names, data model, network |
+| [references/tools.md](skills/reverse-engineering-saas/references/tools.md) | Browser tools, separate profiles, window size |
+| [docs/design.md](docs/design.md) | Design decisions and their reasons |
+| [docs/testing.md](docs/testing.md) | How the skill was tested, and how to test changes |
+| [docs/comparison-with-rea.md](docs/comparison-with-rea.md) | RES and REA side by side |
+
 ## Status
 
 Version 0.1.0. The method was tested with scenario runs on subagents, before and after writing the skill, and the scripts with automated tests. It has not yet been run end to end on a real product, so expect rough edges in the first studies. Reports from real runs are welcome.
@@ -124,7 +168,7 @@ Use RES only on accounts you own or are authorized to examine. Read the product'
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Run the tests with `npm install` and `npm test`.
+See [CONTRIBUTING.md](CONTRIBUTING.md). Reports from real studies are the most useful contribution: open a [study report](https://github.com/alextnetto/res/issues/new?template=study_report.yml). Security problems go through [SECURITY.md](SECURITY.md).
 
 ## License
 
