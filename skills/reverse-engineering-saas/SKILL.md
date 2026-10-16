@@ -21,7 +21,7 @@ Do not use this skill when the source code is available (read the code), for nat
 ## Start or resume
 
 - **KB exists:** read `STATUS.md`, `sandbox/environment.md` and the `open` rows of `sandbox/ledger.csv`. Close or verify every open row before new exploration. Run `node <skill>/scripts/check-kb.mjs <kb>`.
-- **No KB:** run `node <skill>/scripts/init-kb.mjs <kb> --product "<Name>" --git`. Default location: `./re-<product>/`. Then fill `00-charter.md` from the user's request. Artifact templates (screen, component, entity, flow, rules, topic, session log) are copied to `<kb>/_templates/`.
+- **No KB:** run `node <skill>/scripts/init-kb.mjs --product "<Name>" --git` from the working directory. It creates `./re-<product>/`; pass a directory first to choose another place. Then fill `00-charter.md` from the user's request. Artifact templates (screen, component, entity, flow, rules, topic, session log) are copied to `<kb>/_templates/`.
 - **Objects from earlier work that are not in this ledger** (an old sandbox list, test records): do not touch them. List them in `STATUS.md` under "Residuals" as pre-existing.
 - **A session that ran without this skill** (changes made, nothing recorded): follow "Adopting an unrecorded session" in `references/safety.md` before anything else.
 
@@ -74,7 +74,7 @@ At L3, "inside the sandbox" means the container plus records the agent created w
 | A0 | Yes | Yes | Yes | Yes |
 | A1 | Yes | Yes | Revert in the same session | Revert in the same session |
 | A2 | Yes | Yes | Inside the container only | No |
-| A3 | Yes | Ledger row with before-value, restore before the session ends | Same as L2 | Same as L2 |
+| A3 | Yes | Ledger row with before-value, restore before the session ends | Same as L2 | No |
 | A4 | Yes | Creating the workspace, then changes inside it only | No | No |
 | A5 | No | No | No | No |
 
@@ -161,18 +161,18 @@ Record each one as `BR-###` in `clone/barriers.md` with category, features block
 | `[doc SRC-004]` | Public documentation listed in `sources.md` |
 | `[inf]` | Inference. The same line must cite the `Q-###` that would confirm it |
 
-Rules, barriers and data model fields need `obs`, `net` or `doc`. Every screen, component, flow and topic file ends with a "Not tested" list. Record each evidence file in `evidence/index.csv` (date, session, route, what it shows, masked).
+Rules, barriers and data model fields need `obs`, `net` or `doc`; `[inf]` with a `Q-###` is allowed while the question is open (the checker warns). Every screen, component, flow and topic file ends with a "Not tested" list. Record each evidence file in `evidence/index.csv` (date, session, route, what it shows, masked).
 
 ## Page scripts
 
-Paste the file content into the browser's JavaScript tool. Each script returns JSON and stores nothing outside the page.
+Paste the file content into the browser's JavaScript tool. Each script returns JSON and stores nothing outside the page. Page scripts return structure, counts and shapes. Known exceptions, filtered but not eliminated: test-ID values and route segments that look like identifiers, and short configuration values (statuses, types) in `api-shapes.js`; review them before saving at L3 and L4.
 
 | Script | Returns |
 |---|---|
 | `scripts/page/inventory.js` | Framework, component tag names, test IDs, ARIA roles, internal route patterns, third-party SDKs |
 | `scripts/page/tokens.js` | CSS variables and the most frequent colors, type sizes, radii, spacing and shadows |
-| `scripts/page/api-shapes.js` | Installs a recorder; `__re.api.dump()` returns endpoint templates and JSON shapes, never values |
-| `scripts/page/mask.js` | Blurs emails, phones, money and given selectors; `__re.mask.clear()` removes it |
+| `scripts/page/api-shapes.js` | Installs a recorder; `__re.api.dump()` returns endpoint templates and JSON shapes; set `__re.api.enumSamples = false` to drop the short enum values too |
+| `scripts/page/mask.js` | Blurs emails, phones, money, Brazilian tax IDs, small avatars, given names and given selectors; `__re.mask.clear()` removes it |
 | `scripts/page/annotate.js` | Numbered outlines on given elements for anatomy screenshots |
 
 Tool-specific notes (saving screenshots, network, profiles, drag and drop): `references/extraction.md` and `references/tools.md`.
@@ -180,7 +180,7 @@ Tool-specific notes (saving screenshots, network, profiles, drag and drop): `ref
 ## Close a session
 
 1. Restore every A1 and A3 change and verify it. Disable time-triggered automations. Update the ledger.
-2. Update `STATUS.md`: phase, last session, next three actions, needs human, blocked items, sandbox state.
+2. Update `STATUS.md`: header (date, session, phase, environment, open ledger rows), Summary, Next actions (three), Needs human, Blocked, Last session, Residuals.
 3. Write `log/<date>-s<NN>.md`.
 4. Run `node <skill>/scripts/check-kb.mjs <kb>` and fix every error.
 5. At the end of the study only: tear down from the ledger, compare baseline counts, list residuals in `STATUS.md`, then run `check-kb --closing`.

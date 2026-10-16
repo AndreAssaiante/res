@@ -100,8 +100,8 @@ At the end of each session: restore every A1 and A3 row, and disable time-trigge
 3. Verify each removal: reload, search for the `[RE]` prefix, check trash or "restore data" pages.
 4. Look for orphans. Deleting a parent can leave children behind (activities, notes, comments, attachments, time entries). Search for them by the `[RE]` prefix and by date.
 5. Compare the baseline counts with the current counts. Explain every difference.
-6. List residuals in `STATUS.md` (for example "note 2034 attached to a deleted deal; no UI to delete it").
-7. Run `check-kb --closing`. It fails while any ledger row is `open`.
+6. List residuals in `STATUS.md` (for example "a note attached to a deleted deal; no UI to delete it").
+7. Run `check-kb --closing`. It fails while any ledger row is `open`, `fixture` or `human`.
 
 Trash retention (often 30 days) means a removed item is still restorable. State this in `STATUS.md`.
 

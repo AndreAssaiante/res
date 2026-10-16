@@ -124,7 +124,8 @@
       if (style.rowGap && style.rowGap !== 'normal' && style.rowGap !== '0px') bump(spacing, style.rowGap, 'gap');
       if (style.borderTopLeftRadius !== '0px') bump(radius, style.borderTopLeftRadius);
       if (style.boxShadow !== 'none') bump(shadows, style.boxShadow);
-      if (style.transitionDuration !== '0s') bump(motion, `${style.transitionProperty} ${style.transitionDuration} ${style.transitionTimingFunction}`);
+      if (style.transitionDuration !== '0s') bump(motion, `transition ${style.transitionProperty} ${style.transitionDuration} ${style.transitionTimingFunction}`);
+      if (style.animationName && style.animationName !== 'none') bump(motion, `animation ${style.animationName} ${style.animationDuration} ${style.animationTimingFunction}`);
       if (style.zIndex !== 'auto' && style.position !== 'static') bump(zIndex, style.zIndex);
     }
 
@@ -167,6 +168,7 @@
     'outlineOffset', 'fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'textTransform',
     'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'marginTop', 'marginRight', 'marginBottom',
     'marginLeft', 'gap', 'opacity', 'cursor', 'transitionProperty', 'transitionDuration', 'transitionTimingFunction',
+    'animationName', 'animationDuration', 'animationTimingFunction',
   ];
 
   tokens.element = function element(selector) {

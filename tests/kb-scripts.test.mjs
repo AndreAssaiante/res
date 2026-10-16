@@ -53,7 +53,7 @@ test('references must resolve to definitions', () => {
   let result = check();
   assert.equal(result.status, 1);
   assert.match(result.stdout, /F-001 is referenced but not defined/);
-  appendFileSync(join(kb, 'inventory/features.md'), '| F-001 | Deals | Board | Free | P1 | S-001 | todo | [doc SRC-001] |\n');
+  appendFileSync(join(kb, 'inventory/features.md'), '| F-001 | Deals | Board | Free | P1 | S-001 | | todo | [doc SRC-001] |\n');
   appendFileSync(join(kb, 'sources.md'), '| SRC-001 | Help center | https://example.com/help | docs | 2026-10-15 | features |\n');
   result = check();
   assert.equal(result.status, 0, result.stdout);
@@ -186,15 +186,37 @@ test('invalid ledger rows are errors', () => {
 });
 
 test('coverage cells are counted and invalid values flagged', () => {
-  appendFileSync(join(kb, 'inventory/features.md'), '| F-001 | Deals | Board | Free | P1 | | todo | |\n');
+  appendFileSync(join(kb, 'inventory/features.md'), '| F-001 | Deals | Board | Free | P1 | | | todo | |\n');
   appendFileSync(join(kb, 'inventory/coverage.md'), '| F-001 Board | done | partial | blocked: drag | todo | n/a | done | maybe | done | notes |\n');
   const result = check();
   assert.match(result.stdout, /Coverage cells: todo 1, partial 1, done 3, blocked 1, n\/a 1/);
   assert.match(result.stdout, /"maybe" is not one of/);
 });
 
+test('features without a coverage row are flagged', () => {
+  appendFileSync(join(kb, 'inventory/features.md'), '| F-001 | Deals | Board | Free | P1 | | | todo | |\n');
+  assert.match(check().stdout, /inventory\/coverage\.md: F-001 has no row/);
+  appendFileSync(join(kb, 'inventory/coverage.md'), '| F-001 Board | todo | todo | todo | todo | todo | todo | todo | todo | todo | |\n');
+  assert.doesNotMatch(check().stdout, /F-001 has no row/);
+});
+
+test('--closing fails on an unfilled charter; --help exits 0', () => {
+  const closing = check('--closing');
+  assert.equal(closing.status, 1);
+  assert.match(closing.stdout, /Errors[\s\S]*00-charter\.md: template placeholders/);
+  const help = run('check-kb.mjs', '--help');
+  assert.equal(help.status, 0);
+  assert.match(help.stdout, /Usage/);
+});
+
+test('init-kb defaults to ./re-<product-slug>', () => {
+  const result = spawnSync(process.execPath, [join(scripts, 'init-kb.mjs'), '--product', 'Ação CRM'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  assert.ok(existsSync(join(dir, 're-acao-crm', 'STATUS.md')));
+});
+
 test('--next prints the next free ID per prefix', () => {
-  appendFileSync(join(kb, 'inventory/features.md'), '| F-007 | Deals | Board | Free | P1 | | todo | |\n');
+  appendFileSync(join(kb, 'inventory/features.md'), '| F-007 | Deals | Board | Free | P1 | | | todo | |\n');
   write('evidence/EV-012-x.png', 'png');
   const result = check('--next');
   assert.match(result.stdout, /F-008/);

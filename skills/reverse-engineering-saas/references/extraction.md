@@ -12,8 +12,8 @@ Playwright MCP's `browser_evaluate` expects a function. Wrap the file content: `
 |---|---|---|
 | `inventory.js` | Runs on load; `__re.inventory()` reruns | Run on each main screen. Large pages: results are capped and say so |
 | `tokens.js` | Runs on load; `__re.tokens({root: '.selector'})` limits to a subtree | Run once per theme. Diff light and dark to find themed tokens |
-| `api-shapes.js` | Installs on load; `__re.api.dump()`, `__re.api.clear()` | Install, clear, perform one action, dump. Records shapes, never values or headers |
-| `mask.js` | `__re.mask.apply({selectors: [...]})`, `__re.mask.clear()` | Blurs emails, phones, money values and the given selectors |
+| `api-shapes.js` | Installs on load; `__re.api.dump()`, `__re.api.clear()` | Install, clear, perform one action, dump. Records shapes, never headers; keeps short enum-like values of status and type fields unless `__re.api.enumSamples = false` |
+| `mask.js` | `__re.mask.apply({selectors: [...], names: [...], avatars: true})`, `__re.mask.clear()` | Blurs emails, phones, money values, Brazilian tax IDs (CPF, CNPJ), small avatars, the given names and the given selectors |
 | `annotate.js` | `__re.annotate(['.header', '.toolbar', ...])`, `__re.annotate.clear()` | Numbered outlines; the result lists number, selector, size |
 
 ## Design tokens
@@ -45,7 +45,7 @@ Production bundles shorten JavaScript names, but other sources keep them:
 Combine three sources and tag each field with the strongest:
 
 1. Public API reference: `[doc SRC-###]`.
-2. Network shapes from `api-shapes.js`: `[net EV-###]`. The recorder reports types and format hints (`iso-date`, `epoch-ms`, `uuid`, `email`, `url`, `hex-color`), never values.
+2. Network shapes from `api-shapes.js`: `[net EV-###]`. The recorder reports types and format hints (`iso-date`, `epoch-ms`, `uuid`, `email`, `url`, `hex-color`) and, for status and type fields, short enum-like values.
 3. UI: field types seen in forms and custom field menus: `[obs EV-###]`.
 
 Vary fixtures to reveal every field: one record per custom field type, with and without optional values, with relations.

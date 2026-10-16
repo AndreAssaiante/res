@@ -5,7 +5,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 
-const USAGE = 'Usage: node check-kb.mjs <kb-dir> [--closing] [--next]';
+const USAGE = 'Usage: node check-kb.mjs <kb-dir> [--closing] [--next] [--help]';
 const ID_PATTERN = /\b(FL|SRC|EV|BR|F|S|C|R|E|B|Q|L)-(\d{3})\b/g;
 const SKIP_DIRS = new Set(['.git', 'node_modules', '_templates']);
 const SCANNED_EXTENSIONS = new Set(['.md', '.mmd', '.ts']);
@@ -36,6 +36,7 @@ const HEADING_ID_FILES = { 'findings.md': ['B'], 'questions.md': ['Q'], 'clone/b
 const ARTIFACT_DIRS = ['screens', 'components', 'flows', 'topics'];
 
 const errors = [];
+let closingRun = false;
 const warnings = [];
 const definitions = new Map();
 
@@ -158,7 +159,11 @@ function checkReferencesAndLinks(kb, files) {
         if (!new RegExp(`^\\s+${expected}-\\d{3}`).test(tag[2])) errors.push(`${where}: [${tag[1]} ...] must cite ${expected}-###`);
       }
     });
-    if (/\{\{[^}]+\}\}/.test(text)) warnings.push(`${file}: template placeholders {{...}} not filled`);
+    if (/\{\{[^}]+\}\}/.test(text)) {
+      // At the end of a study the charter must be complete; elsewhere a placeholder is a reminder.
+      if (closingRun && file === '00-charter.md') errors.push(`${file}: template placeholders {{...}} not filled`);
+      else warnings.push(`${file}: template placeholders {{...}} not filled`);
+    }
   }
 }
 
@@ -277,6 +282,18 @@ function checkEntities(kb, files) {
   }
 }
 
+// Every feature should have a row in the coverage queue.
+function checkCoverageRows(kb) {
+  const path = join(kb, 'inventory', 'coverage.md');
+  if (!existsSync(path)) return;
+  const covered = new Set(stripIgnored(readFileSync(path, 'utf8')).match(/^\|\s*F-\d{3}/gm)?.map((cell) => cell.replace(/^\|\s*/, '')) ?? []);
+  for (const [id, places] of definitions) {
+    if (id.startsWith('F-') && places.some((place) => place.file === 'inventory/features.md') && !covered.has(id)) {
+      warnings.push(`inventory/coverage.md: ${id} has no row`);
+    }
+  }
+}
+
 function coverageSummary(kb) {
   const path = join(kb, 'inventory', 'coverage.md');
   const counts = Object.fromEntries([...COVERAGE_VALUES].map((value) => [value, 0]));
@@ -308,10 +325,14 @@ function nextIds() {
 
 function main() {
   const args = process.argv.slice(2);
+  if (args.includes('--help')) {
+    console.log(USAGE);
+    return;
+  }
   const kbArg = args.find((arg) => !arg.startsWith('--'));
-  if (!kbArg || args.includes('--help')) {
+  if (!kbArg) {
     console.error(USAGE);
-    process.exit(kbArg ? 0 : 2);
+    process.exit(2);
   }
   const kb = resolve(kbArg);
   if (!existsSync(kb)) {
@@ -319,6 +340,7 @@ function main() {
     process.exit(2);
   }
   const closing = args.includes('--closing');
+  closingRun = closing;
   const files = walk(kb);
 
   collectDefinitions(kb, files);
@@ -329,6 +351,7 @@ function main() {
   checkArtifacts(files, kb);
   checkEvidenceIndex(kb, files);
   checkEntities(kb, files);
+  checkCoverageRows(kb);
   checkStatus(kb, files, ledger);
   const coverage = coverageSummary(kb);
 

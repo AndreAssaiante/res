@@ -18,8 +18,12 @@
   const MAX_KEYS = 80;
   const MAX_ENUM_VALUES = 20;
   // Short string values are kept only for keys that usually hold configuration
-  // (statuses, types), never for free text or personal data.
-  const ENUM_KEY = /(^|_)(status|state|type|kind|priority|role|stage|mode|visibility|permission|level|category|color|unit|format|op|event|action)$/i;
+  // (statuses, types) and only when they look like enum values. Users can still name
+  // statuses, so set window.__re.api.enumSamples = false at L3 and L4 if needed.
+  const ENUM_KEY = /(^|_)(status|state|type|kind|priority|role|stage|mode|visibility|permission|level|unit|format)$/i;
+  const looksLikeEnum = (value) =>
+    value.length <= 30 && value.trim().split(/\s+/).length <= 3 && !/@/.test(value) && !/\d{3,}/.test(value);
+  const looksLikeToken = (value) => /^[A-Za-z][\w.:/-]{0,40}$/.test(value);
   const STATIC_ASSET = /\.(js|mjs|css|png|jpe?g|gif|svg|webp|ico|woff2?|ttf|map)(\?|$)/i;
   const installedAt = performance.now();
   const entries = new Map();
@@ -87,7 +91,7 @@
       const keys = Object.keys(value);
       for (const key of keys.slice(0, MAX_KEYS)) {
         const child = value[key];
-        if (enums && typeof child === 'string' && child.length <= 40 && ENUM_KEY.test(key)) {
+        if (enums && re.api?.enumSamples !== false && typeof child === 'string' && ENUM_KEY.test(key) && looksLikeEnum(child)) {
           const set = (enums[`${path}.${key}`] = enums[`${path}.${key}`] || new Set());
           if (set.size < MAX_ENUM_VALUES) set.add(child);
         }
@@ -222,7 +226,8 @@
       const socket = protocols === undefined ? new original.WebSocket(url) : new original.WebSocket(url, protocols);
       const frame = (direction) => (data) => {
         const json = parseJson(typeof data === 'string' ? data : '');
-        const kind = json && typeof json === 'object' ? json.type || json.event || json.op || json.action || json.method : null;
+        const rawKind = json && typeof json === 'object' ? json.type || json.event || json.op || json.action || json.method : null;
+        const kind = typeof rawKind === 'string' ? (looksLikeToken(rawKind) ? rawKind : '(other)') : null;
         record({ channel: `WS-${direction}`, method: 'WS', url: String(url), operationHint: kind ? String(kind) : null, responseJson: json });
       };
       socket.addEventListener('message', (event) => {
@@ -250,6 +255,7 @@
 
   re.api = {
     installed: true,
+    enumSamples: true,
     count: () => entries.size,
     clear() {
       entries.clear();

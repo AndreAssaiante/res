@@ -8,4 +8,8 @@ First public release.
 - Production barriers: permissioned integrations, regulation and licensing, certifications, distribution gatekeepers, moats, intellectual property, operating cost, recorded as `BR-###` with severity and evidence.
 - Knowledge base templates and `init-kb.mjs`; `check-kb.mjs` for IDs, references, evidence, ledger, evidence index and status.
 - Page scripts: `inventory.js`, `tokens.js`, `api-shapes.js`, `mask.js`, `annotate.js`.
-- Scenario test protocol (`docs/testing.md`) and automated tests for the scripts.
+- Page scripts return structure, counts and shapes; values that look like personal data are dropped or templated, with leak tests on a fake page.
+- `init-kb.mjs` defaults to `./re-<product>` and creates the KB repository even when git has no identity.
+- `check-kb.mjs` flags features without a coverage row and fails `--closing` on an unfilled charter.
+- Scenario test protocol (`docs/testing.md`) and automated tests for the scripts, run on Node.js 22 and 24 in CI.
+- Security policy, issue templates (bug report, study report), FAQ and documentation index.

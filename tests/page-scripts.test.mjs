@@ -17,6 +17,8 @@ const TASK = {
   id: '86abc1234',
   name: 'Secret task name',
   status: 'in progress',
+  category: 'VIP Maria Souza',
+  type: 'Lead from maria@cliente.com.br',
   due_date: 1791945176083,
   created: '2026-10-15T10:00:00Z',
   assignees: [{ id: 1, email: 'maria@cliente.com.br', color: '#ff00aa' }],
@@ -60,6 +62,10 @@ test('inventory finds components, test IDs, routes and storage key names', async
   assert.ok(result.storageKeys.localStorage.includes('cu_view_state'));
   assert.ok(!JSON.stringify(result).includes('secret-local-value'), 'storage values never leave the page');
   assert.ok(result.accessibility.unnamedControls.some((path) => path.includes('icon-btn')));
+  assert.ok(result.components.testIds.some((entry) => entry.name === 'data-testid=(redacted)'), 'test IDs with spaces are redacted');
+  assert.ok(result.storageKeys.localStorage.includes('user.:id.prefs'), 'digit runs in storage keys become :id');
+  const text = JSON.stringify(result);
+  for (const secret of ['Maria', '4471', '123456']) assert.ok(!text.includes(secret), `value leaked: ${secret}`);
   assert.equal(result.accessibility.landmarks.find((entry) => entry.name === 'nav').count, 1);
   assert.deepEqual(await page.evaluate(() => typeof window.__re.inventory), 'function');
 });
@@ -74,7 +80,7 @@ test('tokens maps computed values back to CSS variables', async () => {
   const radius = result.radius.find((entry) => entry.value === '8px');
   assert.ok(radius.variables.includes('--radius-md'));
   assert.ok(result.variables.list.some((variable) => variable.name === '--color-bg'), 'variables from theme selectors are listed');
-  assert.ok(result.motion.some((entry) => entry.value.includes('0.12s')));
+  assert.ok(result.motion.some((entry) => entry.value.startsWith('transition') && entry.value.includes('0.12s')));
   const element = await page.evaluate(() => window.__re.tokens.element('#save'));
   assert.equal(element.style.backgroundColor, 'rgb(123, 104, 238)');
   assert.equal(element.style.borderTopLeftRadius, '8px');
@@ -95,6 +101,8 @@ test('api-shapes records endpoint templates and shapes without values', async ()
   assert.equal(task.response.assignees[0].email, 'string<email>');
   assert.equal(task.response.assignees[0].color, 'string<hex-color>');
   assert.deepEqual(task.enumSamples['response.status'], ['in progress']);
+  assert.equal(task.enumSamples['response.category'], undefined, 'category values are not sampled');
+  assert.equal(task.enumSamples['response.type'], undefined, 'values with an email are not sampled');
 
   const graph = byUrl['POST /graphql UpdateTask'];
   assert.ok(graph, 'graphql operation missing');
@@ -108,9 +116,17 @@ test('api-shapes records endpoint templates and shapes without values', async ()
   assert.ok(byUrl['WS-in ws://fixture.test/ws task_updated'], 'incoming socket frame missing');
 
   const text = JSON.stringify(entries);
-  for (const secret of ['Secret task name', 'maria@cliente.com.br', 'Private name', '86abc1234', '1791945176083']) {
+  for (const secret of ['Secret task name', 'maria@cliente.com.br', 'Private name', '86abc1234', '1791945176083', 'Maria Souza', '900000000001']) {
     assert.ok(!text.includes(secret), `value leaked: ${secret}`);
   }
+  await page.evaluate(() => {
+    window.__re.api.clear();
+    window.__re.api.enumSamples = false;
+  });
+  await page.evaluate(() => fetch('/api/v2/tasks/86abc1234'));
+  await page.waitForFunction(() => window.__re.api.count() >= 1);
+  const quiet = await page.evaluate(() => window.__re.api.dump());
+  assert.deepEqual(quiet[0].enumSamples, {}, 'enumSamples = false keeps no values');
   await page.evaluate(() => window.__re.api.uninstall());
   assert.equal(await page.evaluate(() => window.__re.api), undefined);
 });

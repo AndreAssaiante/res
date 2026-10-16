@@ -7,19 +7,23 @@ npm install
 ```
 
 ```bash
+npx playwright install --only-shell chromium
+```
+
+```bash
 npm test
 ```
 
 | File | What it checks |
 |---|---|
-| `tests/page-scripts.test.mjs` | Runs the five page scripts in headless Chromium against `tests/fixture.html` with mocked API and WebSocket traffic. Asserts component tags, routes, token-to-variable mapping, endpoint templates, JSON shapes, GraphQL operations, WebSocket frames, masking, annotation, and that no value (names, emails, IDs, storage values) leaves the page |
-| `tests/kb-scripts.test.mjs` | Creates a knowledge base with `init-kb.mjs` and checks every `check-kb.mjs` rule: unresolved references, rules without evidence, malformed tags, placeholder IDs, duplicates, broken links, `[inf]` without a question, missing "Not tested" sections, ledger validation, `--closing`, coverage counts and `--next` |
+| `tests/page-scripts.test.mjs` | Runs the five page scripts in headless Chromium against `tests/fixture.html` with mocked API and WebSocket traffic. Asserts component tags, routes, token-to-variable mapping, endpoint templates, JSON shapes, GraphQL operations, WebSocket frames, masking, annotation, and that the fake names, emails, IDs and storage values on the test page do not appear in the results |
+| `tests/kb-scripts.test.mjs` | Creates a knowledge base with `init-kb.mjs` and checks the main `check-kb.mjs` rules: unresolved references, rules and barriers without evidence, malformed tags, placeholder IDs, duplicates, broken links, `[inf]` without a question, missing "Not tested" sections, ledger validation, `fixture` and `human` rows, `--closing`, evidence index, entity rows, coverage rows and counts, `--next`, `--help`, the default KB directory, and `--git` with and without a git identity |
 
 To reuse an existing Playwright install instead of `npm install`, set `PLAYWRIGHT_MODULE=/path/to/node_modules/playwright`.
 
 ## Scenario tests with subagents
 
-The skill was written test first (RED, GREEN, REFACTOR). Each scenario runs in a fresh subagent that may only read files. The subagent writes the plan it would execute; the plan is graded against the expectations below.
+The skill was written test first (RED, GREEN, REFACTOR). Each scenario runs in a fresh subagent that may only read files. The subagent writes the plan it would execute; the plan is graded against the expectations below. The results describe plans, not actions taken in a real product.
 
 For GREEN runs, tell the subagent to read `SKILL.md` from disk with its file-reading tool. Do not rely on the agent's skill loader in the same session: an edited skill can be served from cache.
 
@@ -67,7 +71,7 @@ Pass if the plan: fills the clone target market; scans barriers in recon; record
 
 | Scenario | Result | Gaps reported and fixed |
 |---|---|---|
-| S1 | Pass. Chose L3 (a pipeline in production) only after a preflight gate, L4 otherwise; never opened the notification bell; cancelled editors and reloaded to confirm; documented A4 features read-only; tore down before morning | "Test environment" undefined ("test everything"); Pipedrive "Add company" starts a subscription; L3 scope for global records (persons, organizations); audience rule versus a company-visible pipeline; preflight threshold worded two ways; per-session teardown at L3; no "read only, not exercised" grade; customer data in KB text |
+| S1 | Pass. Planned L3 (a pipeline in production) only after a preflight gate, L4 otherwise; planned never to open the notification bell, to cancel editors and reload to confirm, to document A4 features read-only, and to tear down before morning | "Test environment" undefined ("test everything"); Pipedrive "Add company" starts a subscription; L3 scope for global records (persons, organizations); audience rule versus a company-visible pipeline; preflight threshold worded two ways; per-session teardown at L3; no "read only, not exercised" grade; customer data in KB text |
 | S2 | Pass. Used the skill's tree, IDs, tags, screen template, page scripts and resume procedure | No evidence index (dates); coverage columns narrower than the checklist; screens versus views versus modals undefined; `kept` rows outliving the study; no re-verification; nothing for motion or icons; entity fields not checked; exploration lacked Phases 2 and 7 |
 | S3 | Pass. Ledger first, undid what affected people, unverified findings as questions, named the rule that would have prevented each risky action | No short-time close; no procedure to adopt a session run without the skill; undo that notifies again; views inside the container unclassified; shared view saved with unknown before-value; unmasked screenshots |
 | S4 | Pass. Chose L2 (new empty workspace) because production had automations and Slack; ledger rows before acting; preflight; permissions deferred to a second account | Creating the workspace had no class; its side effects (default workspace switch, welcome emails, onboarding content); free plan versus paid production; terms forbidding competitors; operator-only emails; time-triggered automations; leftovers from earlier studies; resizing the user's real window; `--git` inside another repository |
@@ -80,7 +84,7 @@ S1 and S3 were re-run against the revised skill to confirm the new wording.
 
 | Scenario | Result | Edge cases reported and fixed |
 |---|---|---|
-| S1 | Pass. Quoted the deciding sentence ("Add company" starts a subscription, so L3); preflight gate; teardown of the whole sandbox before the sellers start at 08:00; A4 features read only and marked "not exercised"; morning summary in three lines | Creating the L3 container had no class (now A2, removed with the container at each session end when visible); second accounts belong at L1, not as paid seats in production; terms decision pending in unattended mode |
+| S1 | Pass. Quoted the deciding sentence ("Add company" starts a subscription, so L3); planned a preflight gate and a teardown of the whole sandbox before the sellers start at 08:00; A4 features read only and marked "not exercised"; morning summary in three lines | Creating the L3 container had no class (now A2, removed with the container at each session end when visible); second accounts belong at L1, not as paid seats in production; terms decision pending in unattended mode |
 | S3 | Pass. Cited a skill section for every step; left the assignments and mention for the user because undoing would notify again; did not rebuild the Sprint 8 board from memory; kept unreviewed screenshots out of the KB | No ledger status for "only the user can resolve" (now `human`); teardown of own records versus the preflight; operator-only change with unknown before-value; screenshot quarantine; a container the user had named; deleting a field of unknown scope |
 
 ### Production barriers (S5), 2026-10-16, Opus 5.5

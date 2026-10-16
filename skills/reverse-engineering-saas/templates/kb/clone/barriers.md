@@ -1,6 +1,6 @@
 # Production barriers: {{PRODUCT}}
 
-Clone target market: {{country_and_customer_segment}} (see `00-charter.md`).
+Clone target market: see `00-charter.md`.
 Not legal advice. A legal reading without a source is `[inf]` with a question for counsel in `questions.md`.
 
 ## Summary

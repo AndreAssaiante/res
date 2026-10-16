@@ -22,6 +22,11 @@ Theme(s) studied: {{themes}}. Window: {{viewport}}.
 | Token | Duration | Easing | Used for | Evidence |
 |---|---|---|---|---|
 
+## Z-index layers
+
+| Layer | Value | Used for | Evidence |
+|---|---|---|---|
+
 ## Icons
 
 | Name | Size | Where used | Evidence |

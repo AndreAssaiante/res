@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Fixture SaaS</title>
+<title>Maria Silva deal 4471 | Fixture SaaS</title>
 <style>
   :root { --color-primary: #7b68ee; --color-text: #1a1a1a; --radius-md: 8px; --space-2: 8px; --shadow-card: 0 1px 2px rgba(0,0,0,.2); }
   .theme-dark { --color-bg: #191919; }
@@ -14,7 +14,7 @@
 </style>
 </head>
 <body>
-<header><h1>Fixture SaaS</h1><button class="icon-btn"><svg width="16" height="16"></svg></button></header>
+<header><h1>Fixture SaaS</h1><button id="deal-4471" class="icon-btn"><svg width="16" height="16"></svg></button></header>
 <nav>
   <a href="/app/123/board">Board A</a>
   <a href="/app/456/board">Board B</a>
@@ -27,6 +27,7 @@
   <app-task-card data-testid="task-card">Review PR</app-task-card>
   <app-task-card data-testid="task-card">Ship</app-task-card>
   <button class="primary" id="save">Save</button>
+  <div data-name="Maria Souza" data-testid="Maria Souza card">Contact</div>
   <p class="contact">Maria Silva, maria.silva@cliente.com.br</p>
   <p class="phone">(48) 99999-1234</p>
   <p class="value">R$ 1.234,56</p>
@@ -35,6 +36,7 @@
 </main>
 <script>
   localStorage.setItem('cu_view_state', 'secret-local-value');
+  localStorage.setItem('user.123456.prefs', 'x');
   window.runActions = async () => {
     await fetch('/api/v2/tasks/86abc1234?include=subtasks&page=1');
     await fetch('/graphql', {
@@ -44,13 +46,13 @@
     });
     await new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
-      xhr.open('GET', '/api/v2/lists/901314610653/tasks');
+      xhr.open('GET', '/api/v2/lists/900000000001/tasks');
       xhr.onloadend = resolve;
       xhr.send();
     });
     await new Promise((resolve) => {
       const socket = new WebSocket('ws://fixture.test/ws');
-      socket.onopen = () => socket.send(JSON.stringify({ type: 'subscribe', channel: 'list-901314610653' }));
+      socket.onopen = () => socket.send(JSON.stringify({ type: 'subscribe', channel: 'list-900000000001' }));
       socket.onmessage = () => { socket.close(); resolve(); };
     });
   };

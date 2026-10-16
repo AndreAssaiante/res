@@ -9,7 +9,7 @@ npm install
 ```
 
 ```bash
-npx playwright install chromium
+npx playwright install --only-shell chromium
 ```
 
 ```bash
@@ -20,7 +20,7 @@ The skill itself has no dependencies. Playwright is only used by the tests, to r
 
 ## Changing a script
 
-Add or update a test in `tests/` for every behavior you change. The page scripts must never return values from the page (names, emails, IDs, storage values); `tests/page-scripts.test.mjs` checks this.
+Add or update a test in `tests/` for every behavior you change. The page scripts return structure, counts and shapes, not the page's data. Keep it that way, and add a leak assertion to `tests/page-scripts.test.mjs` for any new output field: the test page holds fake names, emails, IDs and storage values that must not appear in the results.
 
 ## Changing the skill text
 

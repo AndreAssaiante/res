@@ -26,7 +26,7 @@ One folder per product, `re-<product>/`:
 
 ## Quickstart
 
-**1. Install.** In Claude Code:
+**1. Install.** In a terminal:
 
 ```bash
 claude plugin marketplace add alextnetto/res
@@ -36,15 +36,19 @@ claude plugin marketplace add alextnetto/res
 claude plugin install res@res
 ```
 
-For other agents that read skills from disk, copy the skill folder into the agent's skills directory (`~/.claude/skills/` for Claude Code, `~/.agents/skills/` for most others):
+Inside a Claude Code session, the same commands are `/plugin marketplace add alextnetto/res` and `/plugin install res@res`. Start a new session afterwards.
+
+For other agents that read skills from disk, copy the skill folder into the agent's skills directory (`~/.claude/skills/` for Claude Code, for other agents, check where they read skills from):
 
 ```bash
-git clone https://github.com/alextnetto/res.git && cp -R res/skills/reverse-engineering-saas ~/.claude/skills/
+git clone https://github.com/alextnetto/res.git && mkdir -p ~/.claude/skills && cp -R res/skills/reverse-engineering-saas ~/.claude/skills/
 ```
 
-You also need Node.js 20 or later and an agent that can drive a browser: Claude in Chrome, Playwright MCP or Chrome DevTools MCP.
+You also need Node.js 22 or later and an agent that can drive a browser: Claude in Chrome, Playwright MCP or Chrome DevTools MCP.
 
-**2. Prepare a safe environment (recommended).** Create a trial account of the product with an email you own, log in to it in a separate Chrome profile, and point the agent at that profile. Without it, the agent creates a separate workspace or a sandbox container, or only observes.
+**2. Prepare a safe environment (recommended).** Create a trial account of the product with an email you own, log in to it in a separate Chrome profile, and connect your agent's browser tool to that profile ([how](skills/reverse-engineering-saas/references/tools.md#separate-profile-for-l1)).
+
+Without a trial account, the agent only writes if you ask it to test or to create a test environment. Then it creates a separate workspace or a sandbox container. Otherwise it only observes.
 
 **3. Ask.** In plain language, in any language:
 
@@ -52,7 +56,7 @@ You also need Node.js 20 or later and an agent that can drive a browser: Claude 
 - "Reverse engineer ClickUp's board and task view. Create a test environment, don't ask me anything."
 - "Continue the ClickUp study." The agent resumes from `STATUS.md`.
 
-The agent creates the knowledge base with `init-kb.mjs`, works through the phases below, and runs `check-kb.mjs` before it stops.
+The agent creates the knowledge base as `re-<product>/` in its working directory, works through the phases below, and runs `check-kb.mjs` before it stops. Start later sessions from the same directory.
 
 ## How it works
 
@@ -81,7 +85,7 @@ flowchart LR
 
 | Level | Environment | What the agent may change |
 |---|---|---|
-| L1 | Trial account in a separate browser profile, created by you | Everything except outbound actions |
+| L1 | Trial account in a separate browser profile, created by you | Everything except outbound and irreversible actions (messages, invites, billing, API tokens, accepting terms, connecting integrations) |
 | L2 | New, empty workspace under your login | Test data and configuration inside that workspace |
 | L3 | One sandbox list, project or pipeline inside production | Test data inside the container only |
 | L4 | Production, observe only | Nothing |
@@ -106,7 +110,10 @@ A production barrier:
 ### BR-003 WhatsApp messages need Meta business verification
 - Category: permissioned integration
 - Blocks: F-014 (WhatsApp notifications)
+- Gatekeeper: Meta, WhatsApp Business Platform
 - Severity: blocks feature
+- Market weight: required to sell
+- Lead time and cost: [doc SRC-021]
 - Mitigation: start verification in month one; launch with email notifications
 - Evidence: [doc SRC-021]
 ```
@@ -115,7 +122,7 @@ A production barrier:
 
 ## FAQ
 
-**Will it change my production data?** Only inside a sandbox you allowed, and every change is recorded and removed at the end. Without permission to write, it only observes. Messages, invites, mentions of other people and billing actions are forbidden at every level.
+**Will it change my production data?** Only inside a sandbox you allowed. Every change is recorded in a ledger and, at the end, restored, removed, or listed for you to resolve. Without permission to write, it only observes. Messages, invites, mentions of other people and billing actions are forbidden at every level.
 
 **Does it need my password?** No. The agent never types passwords or creates accounts. You log in, preferably to a trial account in a separate browser profile.
 

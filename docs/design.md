@@ -21,24 +21,24 @@ Three requirements override everything else:
 | Isolation model | Four environment levels (L1 dedicated account to L4 observe only) crossed with six action classes (A0 read to A5 outbound) | Gives the agent a decision table instead of judgment calls under pressure |
 | Account creation | Never by the agent; the user creates trial accounts | Agent safety rules forbid account creation and typing passwords |
 | Unattended mode | Blocks go to `STATUS.md` under "Needs human"; the agent continues with other work | Users delegate long runs (overnight) and cannot answer questions |
-| Memory | The KB on disk is the only memory; write after each feature | Baseline S3 lost the change log to context exhaustion |
+| Memory | The KB on disk is the only memory; write after each feature | In baseline S3 the change log existed only in the agent's context when the session was about to end |
 | Evidence | Every claim tagged `[obs EV-…]`, `[net EV-…]`, `[doc SRC-…]` or `[inf]` + `Q-…` | Engineers must know what was seen versus assumed |
 | Rules | Business rules as `R-###` Given/When/Then with evidence | They become the clone's acceptance tests (`clone/parity.md`) |
 | Gate | `scripts/check-kb.mjs` validates IDs, links, evidence, ledger and status | Mechanical constraints are enforced by a script, not by prose |
-| Extraction | Five dependency-free page scripts (inventory, tokens, api-shapes, mask, annotate) | Same results across Claude in Chrome, Playwright MCP and DevTools MCP |
+| Extraction | Five dependency-free page scripts (inventory, tokens, api-shapes, mask, annotate) | They run under any browser tool that can evaluate JavaScript in the page; tested in headless Chromium |
 | Clean room | Rebuild from behavior; do not copy code, icons, illustrations, logos or long text | Legal exposure of a clone |
 | Production barriers | `BR-###` entries in `clone/barriers.md` with category, severity, lead time, mitigation and evidence; launch blockers first in the PRD build order | A clone that cannot get its integrations approved or its licenses granted cannot launch |
 
 ## Inputs from earlier work
 
-Two manual studies done in October 2026 with Claude in Chrome on a real company account supplied the lessons below.
+Two earlier manual studies (ClickUp and Pipedrive, October 2026) supplied the lessons below.
 
 - ClickUp board, task, navigation and dates studies: sandbox list in a personal space, fixtures created by API, only the operator assigned, view changes are drafts until "Save view", the task layout toggle changes a global user preference on one click, Angular CDK ignores synthetic drags, component names are visible as custom element tags (`cu-board-task`), view drafts are lost on reload.
-- Pipedrive sales rules study: a throwaway pipeline with one deal per scenario (A to I), a preflight that checked automations, webhooks, Slack and calendar sync before any write, real data blurred in the page before screenshots, deleting deals left activities orphaned and one note unreachable (residual), company-wide settings blocked by the auto-mode classifier.
+- Pipedrive sales rules study: a throwaway pipeline with one deal per scenario (A to I), a preflight that checked automations, webhooks, Slack and calendar sync before any write, real data blurred in the page before screenshots, deleting deals left activities orphaned and one note unreachable (residual), and company-wide settings that the agent could not change safely.
 
 ## Baseline tests (RED)
 
-Three scenarios ran on Opus 5.5 subagents without the skill (2026-10-15). Full prompts are in `docs/testing.md`.
+Three scenarios ran on Opus 5.5 subagents without the skill (2026-10-15). Summarized prompts are in `docs/testing.md`.
 
 | Scenario | Baseline behavior | Gaps the skill must close |
 |---|---|---|

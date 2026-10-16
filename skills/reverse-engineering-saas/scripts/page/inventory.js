@@ -2,13 +2,17 @@
 // Paste the whole file into the browser's JavaScript tool. The value of the
 // last expression is the result. Re-run later with window.__re.inventory().
 // Playwright browser_evaluate: wrap as () => { <file>; return window.__re.last; }
+// It returns structure and counts. Test IDs and route segments are kept only when they
+// look like identifiers (no spaces, no long digit runs); review them before saving at L3 and L4.
 (() => {
   const re = (window.__re = window.__re || {});
   const LIMIT = 150;
   const TEST_ID_ATTRIBUTES = [
     'data-testid', 'data-test', 'data-test-id', 'data-qa', 'data-cy', 'data-e2e',
-    'data-pendo-id', 'data-pendo', 'data-automation-id', 'data-component', 'data-name',
+    'data-pendo-id', 'data-pendo', 'data-automation-id', 'data-component',
   ];
+  // Values kept only if they look like code identifiers; anything else is counted as redacted.
+  const looksLikeIdentifier = (value) => /^[A-Za-z][\w.:/-]{0,60}$/.test(value) && !/\d{4,}/.test(value) && !/@/.test(value);
   const SDK_GLOBALS = {
     Sentry: () => window.Sentry || window.__SENTRY__,
     Datadog: () => window.DD_RUM || window.DD_LOGS,
@@ -51,6 +55,7 @@
         if (/^\d+$/.test(segment)) return ':id';
         if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment)) return ':id';
         if (/\d/.test(segment) && segment.length >= 6 && /^[\w-]+$/.test(segment)) return ':id';
+        if (segment.length > 32 || /%|@|\s/.test(segment)) return ':value';
         return segment;
       })
       .join('/');
@@ -69,12 +74,9 @@
   const cssPath = (element) => {
     const parts = [];
     for (let node = element; node && node.nodeType === 1 && parts.length < 4; node = node.parentElement) {
+      // Element IDs often embed record IDs or names, so the path uses tags and classes only.
       let part = node.localName;
-      if (node.id) {
-        parts.unshift(`${part}#${node.id}`);
-        break;
-      }
-      const classes = [...node.classList].slice(0, 2);
+      const classes = [...node.classList].filter(looksLikeIdentifier).slice(0, 2);
       if (classes.length) part += `.${classes.join('.')}`;
       parts.unshift(part);
     }
@@ -109,7 +111,8 @@
 
   const storageKeys = (storage) => {
     try {
-      return Object.keys(storage).sort().slice(0, LIMIT);
+      // Long digit runs in key names are usually user or record IDs.
+      return [...new Set(Object.keys(storage).map((key) => key.replace(/\d{4,}/g, ':id')))].sort().slice(0, LIMIT);
     } catch {
       return ['(not readable)'];
     }
@@ -131,7 +134,7 @@
       if (element.shadowRoot) shadowRoots += 1;
       for (const attribute of TEST_ID_ATTRIBUTES) {
         const value = element.getAttribute(attribute);
-        if (value) bump(testIds, `${attribute}=${value}`);
+        if (value) bump(testIds, `${attribute}=${looksLikeIdentifier(value) ? value : '(redacted)'}`);
       }
       bump(roles, element.getAttribute('role'));
       for (const attribute of element.attributes) {
@@ -175,7 +178,7 @@
     const html = document.documentElement;
     const result = {
       page: {
-        title: document.title,
+        titleLength: document.title.length,
         route: templatePath(location.pathname) + (location.hash.startsWith('#/') ? templatePath(location.hash) : ''),
         lang: html.lang || null,
         viewport: `${innerWidth}x${innerHeight}`,
@@ -228,7 +231,9 @@
       notes: [
         `Scanned ${elements.length} elements in the main document.`,
         shadowRoots ? `${shadowRoots} open shadow roots were not scanned.` : null,
-        'Storage lists key names only, never values.',
+        `Lists are capped: ${LIMIT} entries (class prefixes 30, roles 50, script hosts 50, unnamed controls 30).`,
+        'Storage lists key names only, never values. Long digit runs become :id.',
+        'Route segments made of names (for example /person/jane-doe) are not detected: review routes before saving at L3 and L4.',
       ].filter(Boolean),
     };
     re.last = result;

@@ -18,7 +18,7 @@ Tool names change between versions. Check the tools actually present in the sess
 
 - **L1 dedicated account:** the separate profile is the guard. Use Playwright MCP with a persistent profile directory that only holds the trial login, or Claude in Chrome installed in a separate Chrome profile.
 - **L2 to L4 (user's own login):** Claude in Chrome in the user's Chrome. Open a new tab for the study; do not act on the user's existing tabs.
-- **Desktop apps:** computer use. No DOM or network access, so data model and tokens come from public sources and screenshots only.
+- **Desktop apps:** limited. Computer use gives screenshots and clicks only, with no DOM or network access, so most of this skill does not apply. Prefer the product's web app.
 - **Built-in app browsers** (for example the Claude desktop browser pane) have no user logins and may ask for approval per site. Use them only for local files and public pages.
 
 ## Separate profile for L1

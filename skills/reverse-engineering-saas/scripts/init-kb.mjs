@@ -6,7 +6,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSyn
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const USAGE = 'Usage: node init-kb.mjs <kb-dir> --product "<Name>" [--git]';
+const USAGE = 'Usage: node init-kb.mjs [kb-dir] --product "<Name>" [--git]   (kb-dir defaults to ./re-<product-slug>)';
 const TEXT_EXTENSIONS = new Set(['.md', '.csv', '.mmd', '.ts']);
 
 function parseArgs(argv) {
@@ -79,13 +79,13 @@ function main() {
     console.error(`${error.message}\n${USAGE}`);
     process.exit(2);
   }
-  if (options.help || !options.dir || !options.product) {
+  if (options.help || !options.product) {
     console.error(USAGE);
     process.exit(options.help ? 0 : 2);
   }
 
   const skillDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-  const kbDir = resolve(options.dir);
+  const kbDir = resolve(options.dir || `re-${slugify(options.product)}`);
   const replacements = {
     PRODUCT: options.product,
     DATE: new Date().toLocaleDateString('en-CA'),
