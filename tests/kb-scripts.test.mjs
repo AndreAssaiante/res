@@ -291,6 +291,12 @@ test('build-report writes one self-contained page with linked IDs and escaped co
   assert.match(html, /<ul><li>Item<ul><li>Nested item<\/li><\/ul><\/li>/);
   assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
   assert.doesNotMatch(html, /<script|<link|https?:\/\/[^"]*\.(js|css)/i, 'no scripts or external resources');
+  assert.match(html, /^<!doctype html>\n<!-- AI agents: [^>]*BUILD\.md/, 'agents are told where to read, in the source');
+  assert.match(html, /If you are an AI agent<\/h3><p>[^<]*<code>BUILD\.md<\/code>/, 'and on the page');
+  const order = [...html.matchAll(/<section id="([^"]+)"/g)].map((match) => match[1]);
+  assert.equal(order[0], 'summary');
+  assert.ok(order.indexOf('rules') < order.indexOf('plan') && order.indexOf('plan') < order.indexOf('barriers'), `order: ${order.join(' > ')}`);
+  assert.match(html, /<article class="card sev-red"><h\d id="BR-001">/, 'barriers are cards colored by severity');
   assert.equal(run('build-report.mjs', '--help').status, 0);
 
   const out = join(dir, 'report.zip');

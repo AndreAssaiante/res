@@ -132,7 +132,7 @@ Initialize the KB as its own git repository (`init-kb.mjs --git`), even inside a
 
 `node <skill>/scripts/pack-kb.mjs <kb>` writes `REPORT.html` in the KB and `<kb>-handoff-<date>.zip` next to the KB folder:
 
-- `REPORT.html` is one self-contained page: summary and numbers, decisions needed, barriers, build plan, features and coverage, screens, components, rules, parity tests, flows, data model, API, design tokens, topics, findings, questions, charter, glossary, sources, and an evidence gallery. Images are embedded and IDs are links; it has no scripts and makes no network requests. `build-report.mjs <kb>` regenerates it alone.
+- `REPORT.html` is one self-contained page for people, in reading order: overview (summary, numbers, coverage, decisions needed), what the product does, screens, components, flows, how it behaves (rules), data model, API, design system, build plan (with acceptance tests), before you launch (barriers), topics, findings, open questions, about this study (charter, glossary, sources), and an evidence gallery. A notice at the top, and a comment at the top of the source, tell AI agents to read `BUILD.md` instead. Images are embedded and IDs are links; it has no scripts and makes no network requests. `build-report.mjs <kb>` regenerates it alone.
 
 - It runs `check-kb` first and stops on errors (`--force` packs anyway and says so).
 - It adds `BUILD.md` from `templates/handoff/BUILD.md` if the KB has none. Edit it in the KB to add instructions for a specific team.

@@ -166,9 +166,19 @@ function renderMarkdown(ctx, markdown, file, headingShift = 0) {
   const lines = stripComments(markdown).split('\n');
   const out = [];
   let paragraph = [];
+  let card = null;
   const flush = () => {
     if (paragraph.length) out.push(`<p>${renderInline(ctx, paragraph.join(' '), baseDir)}</p>`);
     paragraph = [];
+  };
+  // A rule or barrier section becomes a card, colored by its severity when it has one.
+  const closeCard = () => {
+    if (!card) return;
+    flush();
+    const body = out.splice(card.start).join('\n');
+    const severity = body.match(/Severity: <span class="chip (\w+)"/)?.[1];
+    out.push(`<article class="card${severity ? ` sev-${severity}` : ''}">${body}</article>`);
+    card = null;
   };
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
@@ -188,10 +198,13 @@ function renderMarkdown(ctx, markdown, file, headingShift = 0) {
     if (heading) {
       flush();
       const level = Math.min(6, heading[1].length + headingShift);
-      const id = heading[2].match(/^([A-Z]+-\d{3})\b/)?.[1];
+      const [, id, rest] = heading[2].match(/^([A-Z]+-\d{3})\b\s*(.*)$/) || [];
+      if (card && level <= card.level) closeCard();
       const attr = id && !ctx.emitted.has(id) ? ` id="${id}"` : '';
       if (attr) ctx.emitted.add(id);
-      out.push(`<h${level}${attr}>${renderInline(ctx, heading[2], baseDir)}</h${level}>`);
+      if (id && /^(R|BR)-/.test(id)) card = { level, start: out.length };
+      const title = id ? `<a class="id" href="#${id}">${id}</a> ${renderInline(ctx, rest, baseDir)}` : renderInline(ctx, heading[2], baseDir);
+      out.push(`<h${level}${attr}>${title}</h${level}>`);
       continue;
     }
     if (line.trim().startsWith('|') && /^\s*\|?\s*:?-{3,}/.test(lines[i + 1] || '')) {
@@ -232,6 +245,7 @@ function renderMarkdown(ctx, markdown, file, headingShift = 0) {
     paragraph.push(line.trim());
   }
   flush();
+  closeCard();
   return out.join('\n');
 }
 
@@ -245,13 +259,16 @@ function renderFiles(ctx, files) {
       const attr = id && !ctx.emitted.has(id) ? ` id="${id}"` : '';
       if (attr) ctx.emitted.add(id);
       const body = renderMarkdown(ctx, text.replace(/^#\s+.*$/m, ''), file, 1);
-      return `<details${attr}><summary>${renderInline(ctx, title, dirname(file))}</summary><div class="file">${body}</div></details>`;
+      const [, titleId, titleRest] = title.match(/^([A-Z]+-\d{3})\b\s*(.*)$/) || [];
+      const label = titleId ? `<span class="id">${titleId}</span> ${renderInline(ctx, titleRest, dirname(file))}` : renderInline(ctx, title, dirname(file));
+      return `<details${attr}><summary>${label}</summary><div class="file">${body}</div></details>`;
     })
     .join('\n');
 }
 
-function section(id, title, html) {
-  return html.trim() ? `<section id="${id}"><h2>${escapeHtml(title)}</h2>${html}</section>` : '';
+function section(id, number, title, lede, html) {
+  const eyebrow = String(number).padStart(2, '0');
+  return `<section id="${id}"><p class="eyebrow">${eyebrow}</p><h2>${escapeHtml(title)}</h2>${lede ? `<p class="lede">${escapeHtml(lede)}</p>` : ''}${html}</section>`;
 }
 
 function markdownSection(ctx, file, headingShift = 1) {
@@ -300,89 +317,180 @@ function evidenceGallery(ctx) {
 }
 
 const CSS = `
-:root{--bg:#ffffff;--fg:#17212b;--muted:#5b6875;--line:#dde3e9;--soft:#f4f7fa;--accent:#1a5276;--red:#b0413e;--amber:#a86a12;--blue:#1f6aa5;--green:#2e7d5b;--gray:#5b6875;
---red-bg:#f7e1e0;--amber-bg:#fbf0dc;--blue-bg:#e3eef8;--green-bg:#e3f2ea;--gray-bg:#eceff2;color-scheme:light}
-@media (prefers-color-scheme:dark){:root{--bg:#0f151b;--fg:#e4eaf0;--muted:#9aa9b7;--line:#2a3845;--soft:#16212b;--accent:#7fb3d9;--red:#e48a86;--amber:#e2b25a;--blue:#8cc0ea;--green:#6cc59a;--gray:#9aa9b7;
+:root{--bg:#f6f8fa;--surface:#ffffff;--fg:#14202b;--muted:#5c6a77;--line:#e1e6eb;--soft:#f1f4f7;--accent:#1f5f8b;--accent-soft:#e5eef6;
+--hero:#0f1a24;--hero-fg:#eef3f7;--hero-muted:#9fb0bf;
+--red:#b0413e;--amber:#9a650f;--blue:#1f6aa5;--green:#2e7d5b;--gray:#5c6a77;
+--red-bg:#f8e3e2;--amber-bg:#fbf0dc;--blue-bg:#e3eef8;--green-bg:#e2f2e9;--gray-bg:#eceff2;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0c1116;--surface:#131b23;--fg:#e4eaf0;--muted:#98a6b3;--line:#25313c;--soft:#18222c;--accent:#7fb3d9;--accent-soft:#182a39;
+--hero:#121e2a;--hero-fg:#eef3f7;--hero-muted:#93a5b5;
+--red:#e48a86;--amber:#e2b25a;--blue:#8cc0ea;--green:#6cc59a;--gray:#98a6b3;
 --red-bg:#3a1d1c;--amber-bg:#33280f;--blue-bg:#172a3a;--green-bg:#173327;--gray-bg:#222c35;color-scheme:dark}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-.layout{display:grid;grid-template-columns:240px minmax(0,1fr);max-width:1240px;margin:0 auto;gap:40px;padding:32px max(16px,env(safe-area-inset-right))}
-nav{position:sticky;top:24px;align-self:start;font-size:14px}nav a{display:block;color:var(--muted);text-decoration:none;padding:3px 0}nav a:hover{color:var(--accent)}
-main{min-width:0}header h1{font-size:32px;line-height:1.2;margin:0 0 6px}header p{color:var(--muted);margin:0}
-h2{font-size:24px;margin:48px 0 14px;padding-top:12px;border-top:1px solid var(--line)}h3{font-size:19px;margin:28px 0 8px}h4,h5,h6{font-size:16px;margin:20px 0 6px}
-a{color:var(--accent)}code{font:13.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);padding:1px 5px;border-radius:4px}
-pre{background:var(--soft);padding:14px 16px;border-radius:8px;overflow-x:auto}pre code{background:none;padding:0}
-.table{overflow-x:auto;margin:12px 0}table{border-collapse:collapse;width:100%;font-size:14.5px}th,td{text-align:left;vertical-align:top;padding:7px 10px;border-bottom:1px solid var(--line)}th{border-bottom:2px solid var(--fg)}
-img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:6px;margin:8px 0}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin:18px 0}.tiles div{background:var(--soft);border-radius:8px;padding:12px 14px}
-.tiles strong{display:block;font-size:26px;font-variant-numeric:tabular-nums}.tiles span{color:var(--muted);font-size:13.5px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.hero{background:var(--hero);color:var(--hero-fg);border-bottom:1px solid var(--line)}
+.hero-inner{max-width:1240px;margin:0 auto;padding:52px max(16px,env(safe-area-inset-right)) 40px max(16px,env(safe-area-inset-left))}
+.kicker{font:600 12.5px/1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--hero-muted);margin:0 0 16px}
+.hero h1{font-size:clamp(34px,5vw,52px);line-height:1.05;letter-spacing:-.02em;margin:0 0 8px}
+.subtitle{font-size:19px;color:var(--hero-muted);margin:0 0 22px;max-width:62ch}
+.meta{display:flex;flex-wrap:wrap;gap:8px}.meta span{border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:3px 12px;font-size:13.5px}
+.layout{display:grid;grid-template-columns:220px minmax(0,1fr);gap:48px;max-width:1240px;margin:0 auto;padding:32px max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+nav{position:sticky;top:20px;align-self:start;font-size:14px;max-height:calc(100vh - 40px);overflow:auto}
+nav a{display:flex;gap:10px;color:var(--muted);text-decoration:none;padding:5px 8px;border-radius:6px}nav a:hover{background:var(--surface);color:var(--fg)}
+nav a b{font:500 12px/1.9 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent);min-width:18px}
+main{min-width:0;padding-bottom:40px}
+.notice{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.notice>div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.notice h3{margin:0 0 6px;font-size:15px}.notice p{margin:0;color:var(--muted);font-size:14.5px}
+.notice .agent{border:1px dashed var(--accent)}.notice .agent h3{color:var(--accent)}
+section{margin:60px 0 0;scroll-margin-top:16px}
+.eyebrow{font:600 13px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent);margin:0 0 8px}
+h2{font-size:28px;line-height:1.2;letter-spacing:-.01em;margin:0 0 6px}
+.lede{color:var(--muted);font-size:17px;margin:0 0 22px;max-width:68ch}
+h3{font-size:19px;line-height:1.3;margin:30px 0 10px}h4{font-size:16.5px;margin:18px 0 8px}h5,h6{font-size:15px;margin:14px 0 6px}
+p,li{max-width:80ch}ul,ol{padding-left:22px}li{margin:3px 0}
+a{color:var(--accent);text-underline-offset:2px}
+code{font:13.5px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--soft);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+pre{background:var(--surface);border:1px solid var(--line);padding:14px 16px;border-radius:10px;overflow-x:auto}pre code{background:none;padding:0}
+.id{display:inline-block;font:600 12.5px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent);background:var(--accent-soft);border-radius:6px;padding:0 7px;text-decoration:none;vertical-align:2px;margin-right:4px}
+.table{overflow-x:auto;margin:14px 0;background:var(--surface);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14.5px}
+th{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--soft)}
+td{text-align:left;vertical-align:top;padding:9px 12px;border-bottom:1px solid var(--line)}tr:last-child td{border-bottom:0}
+img{max-width:100%;height:auto;border:1px solid var(--line);border-radius:8px;margin:10px 0;display:block}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:2px 20px 10px;margin:12px 0;box-shadow:0 1px 2px rgba(15,26,36,.04)}
+.card>h3:first-child,.card>h4:first-child,.card>h5:first-child{margin-top:16px}
+.card.sev-red{border-left:4px solid var(--red)}.card.sev-amber{border-left:4px solid var(--amber)}.card.sev-blue{border-left:4px solid var(--blue)}.card.sev-gray,.card.sev-green{border-left:4px solid var(--gray)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px 22px;margin:0 0 14px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:14px 0}
+.tiles div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.tiles strong{display:block;font-size:30px;line-height:1.1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--accent)}.tiles span{color:var(--muted);font-size:13.5px}
+.coverage{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin:0 0 14px}
+.coverage h3{margin:0 0 10px;font-size:15px}.bar{display:flex;height:12px;border-radius:999px;overflow:hidden;background:var(--soft)}
+.seg.green,.dot.green{background:var(--green)}.seg.blue,.dot.blue{background:var(--blue)}.seg.amber,.dot.amber{background:var(--amber)}.seg.gray,.dot.gray{background:var(--gray-bg)}
+.legend{display:flex;flex-wrap:wrap;gap:16px;color:var(--muted);font-size:13.5px;margin:10px 0 0}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;border:1px solid var(--line)}
+.decide{background:var(--amber-bg);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:12px;padding:4px 22px;margin:14px 0}
+.decide h3{margin-top:14px;font-size:16px}
 .chip{display:inline-block;font-size:12.5px;font-weight:600;padding:1px 9px;border-radius:999px;white-space:nowrap}
 .chip.red{color:var(--red);background:var(--red-bg)}.chip.amber{color:var(--amber);background:var(--amber-bg)}.chip.blue{color:var(--blue);background:var(--blue-bg)}.chip.green{color:var(--green);background:var(--green-bg)}.chip.gray{color:var(--gray);background:var(--gray-bg)}
 .swatch{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid var(--line);vertical-align:-2px;margin-right:6px}
-details{border:1px solid var(--line);border-radius:8px;margin:8px 0;padding:0 14px}summary{cursor:pointer;padding:10px 0;font-weight:600}details[open] summary{border-bottom:1px solid var(--line);margin-bottom:8px}
-.file{padding-bottom:10px}blockquote{margin:12px 0;padding:6px 14px;border-left:3px solid var(--line);color:var(--muted)}
-.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}figure{margin:0}figcaption{font-size:13.5px;color:var(--muted)}figure.small{background:var(--soft);border-radius:8px;padding:10px 12px}
-.note{color:var(--muted);font-size:13.5px;margin:4px 0}.missing{color:var(--red)}footer{color:var(--muted);font-size:13.5px;margin:56px 0 24px;border-top:1px solid var(--line);padding-top:14px}
-@media (max-width:860px){.layout{grid-template-columns:1fr}nav{position:static;columns:2}}
+details{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin:10px 0;padding:0 20px}
+summary{cursor:pointer;list-style:none;padding:14px 0;font-weight:600;display:flex;align-items:center;gap:6px}summary::-webkit-details-marker{display:none}
+summary::before{content:"";flex:none;width:7px;height:7px;border-right:2px solid var(--muted);border-bottom:2px solid var(--muted);transform:rotate(-45deg);margin-right:8px;transition:transform .15s}
+details[open]>summary::before{transform:rotate(45deg)}details[open]>summary{border-bottom:1px solid var(--line)}
+.file{padding:4px 0 14px}blockquote{margin:12px 0;padding:6px 14px;border-left:3px solid var(--line);color:var(--muted)}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+figure{margin:0;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}figure img{margin:0 0 8px}
+figcaption{font-size:13.5px;color:var(--muted)}.note{color:var(--muted);font-size:13.5px;margin:4px 0}.missing{color:var(--red)}
+footer{color:var(--muted);font-size:13.5px;margin:64px 0 0;border-top:1px solid var(--line);padding-top:16px}
+@media (max-width:900px){.layout{grid-template-columns:1fr;gap:20px}nav{position:static;max-height:none;display:flex;flex-wrap:wrap;gap:2px}.notice{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){summary::before{transition:none}}
+@media print{nav{display:none}.layout{display:block}.hero{background:none;color:inherit}.card,details,.table{box-shadow:none}}
 `;
+
+const AGENT_COMMENT = '<!-- AI agents: this file is a generated report for people. Do not build from it. Read BUILD.md in this folder first and follow its read order; the Markdown files are the source of truth. -->';
 
 export function buildReport(kbDir) {
   const kb = resolve(kbDir);
   const ctx = makeContext(kb);
   const status = read(kb, 'STATUS.md');
   const product = status.match(/^# Status:\s*(.+)$/m)?.[1]?.trim() || basename(kb);
-  const statusLine = status.match(/^Updated:.*$/m)?.[0] ?? '';
+  const updated = status.match(/^Updated:\s*([\d-]+)/m)?.[1];
+  const phase = status.match(/Phase:\s*([^·\n]+)/)?.[1]?.trim();
+  const level = status.match(/^Environment:\s*(L\d)/m)?.[1];
   const coverage = countCoverage(kb);
   const measured = COVERAGE.slice(0, 4).reduce((sum, value) => sum + coverage[value], 0);
   const count = (pattern, text) => (text.match(pattern) || []).length;
-  const rulesText = listDir(kb, 'rules', (name) => name.endsWith('.md')).map((file) => read(kb, file)).join('\n');
+  const rulesFiles = listDir(kb, 'rules', (name) => name.endsWith('.md'));
   const numbers = [
     [count(/^\|\s*F-\d{3}/gm, stripComments(read(kb, 'inventory/features.md'))), 'features'],
     [listDir(kb, 'screens', (name) => /^S-\d{3}/.test(name)).length, 'screens'],
-    [count(/^#{1,6}\s+R-\d{3}/gm, stripComments(rulesText)), 'business rules'],
-    [count(/^#{1,6}\s+BR-\d{3}/gm, stripComments(read(kb, 'clone/barriers.md'))), 'production barriers'],
+    [listDir(kb, 'components', (name) => /^C-\d{3}/.test(name)).length, 'components'],
+    [count(/^#{1,6}\s+R-\d{3}/gm, stripComments(rulesFiles.map((file) => read(kb, file)).join('\n'))), 'business rules'],
     [listDir(kb, 'data-model/entities', (name) => /^E-\d{3}/.test(name)).length, 'entities'],
+    [count(/^#{1,6}\s+BR-\d{3}/gm, stripComments(read(kb, 'clone/barriers.md'))), 'launch items'],
     [ctx.evidence.size, 'evidence files'],
-    [measured ? `${Math.round((coverage.done / measured) * 100)}%` : 'n/a', 'coverage done'],
   ];
+  const parts = ['done', 'partial', 'blocked', 'todo'];
+  const coverageHtml = measured
+    ? `<div class="coverage"><h3>How far the study went: ${Math.round((coverage.done / measured) * 100)}% done</h3><div class="bar">${parts
+        .filter((value) => coverage[value])
+        .map((value) => `<span class="seg ${chipClass(value)}" style="width:${((coverage[value] / measured) * 100).toFixed(1)}%"></span>`)
+        .join('')}</div><p class="legend">${parts.map((value) => `<span><i class="dot ${chipClass(value)}"></i>${coverage[value]} ${value}</span>`).join('')}</p></div>`
+    : '';
+  const summary = statusPart(ctx, status, 'Summary');
+  const decide = statusPart(ctx, status, 'Needs human');
+  const blocked = statusPart(ctx, status, 'Blocked');
+  const about = [
+    ['00-charter.md', 'Charter'],
+    ['glossary.md', 'Glossary'],
+    ['sources.md', 'Sources'],
+  ]
+    .map(([file, title]) => (read(kb, file) ? `<h3>${title}</h3>${markdownSection(ctx, file, 2)}` : ''))
+    .join('\n');
 
+  // Order: understand the product, then how to build it, then what to prepare before launch.
   const sections = [
-    ['summary', 'Summary', `${statusPart(ctx, status, 'Summary')}<div class="tiles">${numbers.map(([n, label]) => `<div><strong>${n}</strong><span>${label}</span></div>`).join('')}</div>${statusPart(ctx, status, 'Needs human') ? `<h3>Needs your decision</h3>${statusPart(ctx, status, 'Needs human')}` : ''}${statusPart(ctx, status, 'Blocked') ? `<h3>Blocked</h3>${statusPart(ctx, status, 'Blocked')}` : ''}`],
-    ['barriers', 'Production barriers', markdownSection(ctx, 'clone/barriers.md')],
-    ['plan', 'Build plan', [markdownSection(ctx, 'clone/prd.md'), markdownSection(ctx, 'clone/implications.md')].join('\n')],
-    ['features', 'Features and coverage', [markdownSection(ctx, 'inventory/features.md'), `<h3>Screen catalog</h3>${markdownSection(ctx, 'inventory/screens.md')}`, `<h3>Coverage</h3>${markdownSection(ctx, 'inventory/coverage.md')}`].join('\n')],
-    ['screens', 'Screens', renderFiles(ctx, listDir(kb, 'screens', (name) => name.endsWith('.md')))],
-    ['components', 'Components', renderFiles(ctx, listDir(kb, 'components', (name) => name.endsWith('.md')))],
-    ['rules', 'Business rules', listDir(kb, 'rules', (name) => name.endsWith('.md')).map((file) => markdownSection(ctx, file, 0).replace(/^/, `<h3>${escapeHtml(read(kb, file).match(/^#\s+(.*)$/m)?.[1] ?? basename(file, '.md'))}</h3>`)).join('\n')],
-    ['parity', 'Parity tests', markdownSection(ctx, 'clone/parity.md')],
-    ['flows', 'User flows', renderFiles(ctx, listDir(kb, 'flows', (name) => name.endsWith('.md')))],
-    ['data-model', 'Data model', [renderFiles(ctx, listDir(kb, 'data-model/entities', (name) => name.endsWith('.md'))), markdownSection(ctx, 'data-model/permissions.md'), read(kb, 'data-model/types.ts').trim().length > 120 ? `<h3>TypeScript types</h3><pre class="ts"><code>${escapeHtml(read(kb, 'data-model/types.ts'))}</code></pre>` : '', read(kb, 'data-model/erd.mmd').split('\n').length > 4 ? `<h3>Entity relationships (Mermaid)</h3><pre class="mermaid"><code>${escapeHtml(read(kb, 'data-model/erd.mmd'))}</code></pre>` : ''].join('\n')],
-    ['api', 'API', markdownSection(ctx, 'api/endpoints.md')],
-    ['design', 'Design tokens', markdownSection(ctx, 'design/tokens.md')],
-    ['topics', 'Topics', renderFiles(ctx, listDir(kb, 'topics', (name) => name.endsWith('.md')))],
-    ['findings', 'Findings', markdownSection(ctx, 'findings.md')],
-    ['questions', 'Open questions', markdownSection(ctx, 'questions.md')],
-    ['charter', 'Charter', markdownSection(ctx, '00-charter.md')],
-    ['glossary', 'Glossary', markdownSection(ctx, 'glossary.md')],
-    ['sources', 'Sources', markdownSection(ctx, 'sources.md')],
-  ].map(([id, title, html]) => [id, title, section(id, title, html)]);
-  const gallery = section('evidence', 'Evidence', `<p class="note">Every claim in this report cites its evidence: <code>[obs EV-###]</code> seen in the product, <code>[net EV-###]</code> captured on the network, <code>[doc SRC-###]</code> public documentation, <code>[inf]</code> an inference with an open question.</p><div class="gallery">${evidenceGallery(ctx)}</div>`);
-  const all = [...sections, ['evidence', 'Evidence', gallery]].filter(([, , html]) => html);
+    ['summary', 'Overview', 'What was studied, how far the study went, and what needs your decision.',
+      `${summary ? `<div class="panel">${summary}</div>` : ''}<div class="tiles">${numbers.map(([n, label]) => `<div><strong>${n}</strong><span>${label}</span></div>`).join('')}</div>${coverageHtml}${decide && !/^\s*<ul><li>None\.?<\/li><\/ul>\s*$/.test(decide) ? `<div class="decide"><h3>Needs your decision</h3>${decide}</div>` : ''}${blocked && !/^\s*<ul><li>None\.?<\/li><\/ul>\s*$/.test(blocked) ? `<h3>Blocked</h3>${blocked}` : ''}`],
+    ['features', 'What the product does', 'Every feature found, its plan and priority, the screens it lives on, and how deeply each one was studied.',
+      [markdownSection(ctx, 'inventory/features.md'), read(kb, 'inventory/screens.md') ? `<h3>Screen catalog</h3>${markdownSection(ctx, 'inventory/screens.md', 2)}` : '', `<h3>Coverage by feature</h3>${markdownSection(ctx, 'inventory/coverage.md', 2)}`].join('\n')],
+    ['screens', 'Screens', 'Each screen: its layout, states, interactions, keyboard behavior and text. Open one to read it.',
+      renderFiles(ctx, listDir(kb, 'screens', (name) => name.endsWith('.md')))],
+    ['components', 'Components', 'The reusable pieces of the interface and their states.',
+      renderFiles(ctx, listDir(kb, 'components', (name) => name.endsWith('.md')))],
+    ['flows', 'User flows', 'Step by step journeys through the product.',
+      renderFiles(ctx, listDir(kb, 'flows', (name) => name.endsWith('.md')))],
+    ['rules', 'How it behaves', 'Business rules observed in the product, each with its evidence. They become the acceptance tests of the new product.',
+      rulesFiles.map((file) => `<h3>${escapeHtml(read(kb, file).match(/^#\s+(.*)$/m)?.[1] ?? basename(file, '.md'))}</h3>${markdownSection(ctx, file, 1)}`).join('\n')],
+    ['data-model', 'Data model', 'The entities behind the screens: fields, types, relations and who may do what.',
+      [renderFiles(ctx, listDir(kb, 'data-model/entities', (name) => name.endsWith('.md'))), read(kb, 'data-model/permissions.md') ? `<h3>Permissions</h3>${markdownSection(ctx, 'data-model/permissions.md', 2)}` : '', read(kb, 'data-model/types.ts').trim().length > 120 ? `<h3>TypeScript types</h3><pre class="ts"><code>${escapeHtml(read(kb, 'data-model/types.ts'))}</code></pre>` : '', read(kb, 'data-model/erd.mmd').split('\n').length > 4 ? `<h3>Entity relationships (Mermaid)</h3><pre class="mermaid"><code>${escapeHtml(read(kb, 'data-model/erd.mmd'))}</code></pre>` : ''].join('\n')],
+    ['api', 'API', 'What the web app asks its server for each action, with the shape of the data and no real values.',
+      markdownSection(ctx, 'api/endpoints.md')],
+    ['design', 'Design system', 'Colors, typography, spacing, radius, shadow and motion as the product uses them.',
+      markdownSection(ctx, 'design/tokens.md')],
+    ['plan', 'Build plan', 'What to build and in what order, the acceptance tests, and what to copy, avoid and improve.',
+      [markdownSection(ctx, 'clone/prd.md'), read(kb, 'clone/parity.md') ? `<h3>Acceptance tests</h3>${markdownSection(ctx, 'clone/parity.md', 2)}` : '', markdownSection(ctx, 'clone/implications.md')].join('\n')],
+    ['barriers', 'Before you launch', 'Approvals, licenses and certifications to start early, and what a new product cannot copy. Building can start now; these decide when you can sell.',
+      markdownSection(ctx, 'clone/barriers.md')],
+    ['topics', 'Cross-cutting topics', 'Behavior that spans many screens: search, notifications, permissions and more.',
+      renderFiles(ctx, listDir(kb, 'topics', (name) => name.endsWith('.md')))],
+    ['findings', 'Findings', 'Problems and strengths noticed in the product during the study.', markdownSection(ctx, 'findings.md')],
+    ['questions', 'Open questions', 'What the study could not confirm, and how to answer it.', markdownSection(ctx, 'questions.md')],
+    ['about', 'About this study', 'The goal, scope and terms of the study, the vocabulary of the product, and every public source used.', about],
+  ];
+  const evidence = evidenceGallery(ctx);
+  sections.push(['evidence', 'Evidence', 'Every statement cites its evidence: [obs EV-###] seen in the product, [net EV-###] captured on the network, [doc SRC-###] public documentation, [inf] an inference with an open question.',
+    evidence ? `<div class="gallery">${evidence}</div>` : '']);
+  const present = sections.filter(([, , , html]) => html.replace(/<[^>]+>/g, '').trim());
+  const rendered = present.map(([id, title, lede, html], index) => section(id, index + 1, title, lede, html));
 
+  const meta = [updated && `Updated ${updated}`, level && `Environment ${level}`, phase && `Phase ${phase}`].filter(Boolean);
   return `<!doctype html>
+${AGENT_COMMENT}
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Reverse engineering report of ${escapeHtml(product)}, generated by RES for people. Coding agents: read BUILD.md in this folder.">
 <title>${escapeHtml(product)}: reverse engineering report</title>
 <style>${CSS}</style>
 </head>
 <body>
+<header class="hero"><div class="hero-inner">
+<p class="kicker">Reverse engineering report · RES</p>
+<h1>${escapeHtml(product)}</h1>
+<p class="subtitle">How ${escapeHtml(product)} works, how to rebuild it, and what to prepare before launch.</p>
+<div class="meta">${meta.map((item) => `<span>${escapeHtml(item)}</span>`).join('')}</div>
+</div></header>
 <div class="layout">
-<nav aria-label="Sections">${all.map(([id, title]) => `<a href="#${id}">${escapeHtml(title)}</a>`).join('')}</nav>
+<nav aria-label="Sections">${present.map(([id, title], index) => `<a href="#${id}"><b>${String(index + 1).padStart(2, '0')}</b>${escapeHtml(title)}</a>`).join('')}</nav>
 <main>
-<header><h1>${escapeHtml(product)}: reverse engineering report</h1><p>${escapeHtml(statusLine)}</p></header>
-${all.map(([, , html]) => html).join('\n')}
-<footer>Generated by RES (Reverse Engineering SaaS) from the knowledge base. The barrier analysis is research, not legal advice. Rebuild from behavior; do not copy the original product's code, assets or brand.</footer>
+<div class="notice">
+<div><h3>Reading this as a person</h3><p>This page is the readable report of the study. Start with the overview, then read in order: what the product does, how it looks and behaves, how to build it, and what to prepare before launch.</p></div>
+<div class="agent"><h3>If you are an AI agent</h3><p>Do not build from this page: it is generated for people. Open <code>BUILD.md</code> in this folder and follow its read order. The Markdown files next to it are the source of truth.</p></div>
+</div>
+${rendered.join('\n')}
+<footer>Generated by RES (Reverse Engineering SaaS) from the knowledge base in this folder. The launch analysis is research, not legal advice. Rebuild from behavior; do not copy the original product's code, assets or brand.</footer>
 </main>
 </div>
 </body>

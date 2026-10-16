@@ -30,7 +30,7 @@
 
 Want to rebuild a product your team relies on, or launch a competitor in your market? Ask your agent to study it with RES. The agent explores the product in a test environment, records every change it makes, and writes what it learns to files: screens and states, business rules with evidence, the data model, API shapes, design tokens, and what could stop the clone from launching, such as integrations that need approval, licenses and certifications.
 
-At the end you get two files. `REPORT.html` is the report you read: one page with the summary, the decisions you need to make, launch barriers, the build plan, every screen and rule, the data model, design tokens and the evidence. The zip is for your coding agent: unzip it, give it the folder, and it starts from `BUILD.md`.
+At the end you get two files. `REPORT.html` is the report you read: one page that starts with the overview and the decisions you need to make, then walks through what the product does, every screen and rule, the data model and design, the build plan, and what to prepare before launch. The zip is for your coding agent: unzip it, give it the folder, and it starts from `BUILD.md`.
 
 RES is one agent skill with plain Markdown templates and a few dependency-free Node.js scripts. It adds about 130 tokens to every session and about 4,600 when it runs (measured with `claude plugin details`).
 
@@ -265,7 +265,7 @@ That depends on the product's terms and your jurisdiction. RES records the relev
 
 ## Status
 
-Version 0.3.0. The method was tested with scenario runs on subagents, before and after each change to the skill, and the scripts with automated tests on Node.js 22 and 24. Two end-to-end studies on real products (ClickUp at L2, Pipedrive at L3) are in [examples/](examples/). Version 0.3.0 fixes the gaps the Pipedrive study found; the ClickUp study's are tracked in [an issue](https://github.com/alextnetto/res/issues/5). Reports from real runs are welcome: open a [study report](https://github.com/alextnetto/res/issues/new?template=study_report.yml).
+Version 0.3.1. The method was tested with scenario runs on subagents, before and after each change to the skill, and the scripts with automated tests on Node.js 22 and 24. Two end-to-end studies on real products (ClickUp at L2, Pipedrive at L3) are in [examples/](examples/). Version 0.3.0 fixes the gaps the Pipedrive study found; the ClickUp study's are tracked in [an issue](https://github.com/alextnetto/res/issues/5). Reports from real runs are welcome: open a [study report](https://github.com/alextnetto/res/issues/new?template=study_report.yml).
 
 ## Responsible use
 

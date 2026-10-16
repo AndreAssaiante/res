@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.1 (2026-10-16)
+
+- `REPORT.html` redesigned for reading: a header with the product and study status, a notice that the page is for people and that AI agents should read `BUILD.md` (also as a comment at the top of the source), numbered sections in reading order (overview, product, screens, flows, rules, data, API, design, build plan, then what to prepare before launch), a coverage bar, rules and barriers as cards, IDs as badges.
+
 ## 0.3.0 (2026-10-16)
 
 First end-to-end studies on real products, published in `examples/` (ClickUp at L2, Pipedrive at L3, each with `REPORT.html`), and fixes for the gaps the Pipedrive study found.
