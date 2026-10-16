@@ -9,6 +9,7 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from '
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { deflateRawSync } from 'node:zlib';
+import { buildReport } from './build-report.mjs';
 
 const USAGE = 'Usage: node pack-kb.mjs <kb-dir> [--out <file.zip>] [--full] [--force] [--help]';
 const ALWAYS_SKIP = new Set(['.git', 'node_modules', '_templates', '.DS_Store', '.gitkeep']);
@@ -197,6 +198,9 @@ function main() {
     const template = readFileSync(join(scripts, '..', 'templates', 'handoff', 'BUILD.md'), 'utf8');
     writeFileSync(brief, template.replaceAll('{{PRODUCT}}', product).replaceAll('{{DATE}}', date));
   }
+  // The human-readable report travels in the zip and is also sent on its own.
+  const report = join(kb, 'REPORT.html');
+  writeFileSync(report, buildReport(kb));
 
   const skipped = options.full ? [] : PRIVATE_DIRS.filter((dir) => existsSync(join(kb, dir)));
   const folder = basename(kb);
@@ -211,7 +215,8 @@ function main() {
   console.log(`${entries.length} files, ${(zip.length / 1024).toFixed(0)} KB.${skipped.length ? ` Left out: ${skipped.map((dir) => `${dir}/`).join(', ')} (use --full to include).` : ''}`);
   if (ledger) console.log(`Kept ${LEDGER} without object IDs, locations or URLs.`);
   if (check.status !== 0) console.log('Packed with --force: check-kb reported errors.');
-  console.log('Send this file to the user. Any coding agent can start from BUILD.md inside it.');
+  console.log(`Report: ${report}`);
+  console.log('Send both files to the user: REPORT.html to read, the zip for any coding agent (start at BUILD.md).');
 }
 
 main();

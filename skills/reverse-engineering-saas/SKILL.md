@@ -7,7 +7,7 @@ description: Use when studying a SaaS web product from the outside in order to r
 
 ## Overview
 
-The output is a knowledge base (KB) on disk from which a team that never used the product can rebuild it and take it to production, delivered at the end as a zip the user can hand to any coding agent. Two rules are absolute:
+The output is a knowledge base (KB) on disk from which a team that never used the product can rebuild it and take it to production. It is delivered as `REPORT.html`, the report a person reads, and a zip the user can hand to any coding agent. Two rules are absolute:
 
 1. **The exploration never damages the user's production data and never reaches a real person.**
 2. **Every statement in the KB carries its evidence.**
@@ -179,6 +179,8 @@ Paste the file content into the browser's JavaScript tool. Each script returns J
 | `scripts/page/mask.js` | Blurs emails, phones, money, Brazilian tax IDs, small avatars, given names, matching placeholders, and given selectors as CSS rules that also cover elements rendered later; `__re.mask.clear()` removes it |
 | `scripts/page/annotate.js` | Numbered outlines on given elements for anatomy screenshots |
 
+To show progress before the end, run `node <skill>/scripts/build-report.mjs <kb>` and send `REPORT.html`.
+
 Tool-specific notes (saving screenshots, network, profiles, drag and drop): `references/extraction.md` and `references/tools.md`.
 
 ## Close a session
@@ -188,7 +190,7 @@ Tool-specific notes (saving screenshots, network, profiles, drag and drop): `ref
 3. Write `log/<date>-s<NN>.md`.
 4. Run `node <skill>/scripts/check-kb.mjs <kb>` and fix every error.
 5. At the end of the study only: tear down from the ledger, compare baseline counts, list residuals in `STATUS.md`, then run `check-kb --closing`.
-6. Hand off: run `node <skill>/scripts/pack-kb.mjs <kb>` and send the zip to the user in the chat. Attach it with the agent's file-sending tool when there is one; otherwise give its path. The zip holds the KB and `BUILD.md`, a brief any coding agent can follow, and leaves out `sandbox/` and `log/` except a copy of the ledger without object IDs, locations or URLs. With the zip, send the three-line summary from `STATUS.md`, the "Needs human" list, and one line: "Unzip it and give the folder to a coding agent, starting at BUILD.md."
+6. Hand off: run `node <skill>/scripts/pack-kb.mjs <kb>`. It writes `REPORT.html` (one self-contained page: summary, barriers, build plan, screens, rules, data model, tokens, evidence) and the zip. Send both to the user in the chat, the report first as the main deliverable. Attach them with the agent's file-sending tool when there is one; otherwise give their paths. The zip holds the KB and `BUILD.md`, a brief any coding agent can follow, and leaves out `sandbox/` and `log/` except a copy of the ledger without object IDs, locations or URLs. With them, send the three-line summary from `STATUS.md`, the "Needs human" list, and one line: "Open REPORT.html to read the study; unzip the zip and give the folder to a coding agent, starting at BUILD.md."
 
 The study ends when coverage is complete or the user says to stop. When the user stops early, write the Phase 6 files from what exists, close, and pack: `STATUS.md` tells the reader what is missing. At L1 the trial account may keep its fixtures as `kept` ("trial kept for the developers"); ending the trial is the user's action. `pack-kb` runs the regular check, so rows marked `human` do not block the handoff; list them under "Needs human".
 

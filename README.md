@@ -30,7 +30,7 @@
 
 Want to rebuild a product your team relies on, or launch a competitor in your market? Ask your agent to study it with RES. The agent explores the product in a test environment, records every change it makes, and writes what it learns to files: screens and states, business rules with evidence, the data model, API shapes, design tokens, and what could stop the clone from launching, such as integrations that need approval, licenses and certifications.
 
-At the end you get a zip. Unzip it, give the folder to any coding agent, and it starts from `BUILD.md`.
+At the end you get two files. `REPORT.html` is the report you read: one page with the summary, the decisions you need to make, launch barriers, the build plan, every screen and rule, the data model, design tokens and the evidence. The zip is for your coding agent: unzip it, give it the folder, and it starts from `BUILD.md`.
 
 RES is one agent skill with plain Markdown templates and a few dependency-free Node.js scripts. It adds about 130 tokens to every session and about 4,600 when it runs (measured with `claude plugin details`).
 
@@ -71,7 +71,7 @@ Study Pipedrive so my team can rebuild it for the Brazilian market.
 Use the trial profile, and don't ask me anything until you're done.
 ```
 
-Replace the product, the market and the scope with your own. The agent creates `re-<product>/` in its working directory, works through the phases below, and sends you `re-<product>-handoff-<date>.zip` when it finishes. To continue later, start a session in the same directory and say "Continue the Pipedrive study."
+Replace the product, the market and the scope with your own. The agent creates `re-<product>/` in its working directory, works through the phases below, and sends you `REPORT.html` and `re-<product>-handoff-<date>.zip` when it finishes. To continue later, start a session in the same directory and say "Continue the Pipedrive study."
 
 ### Use the scripts directly
 
@@ -83,6 +83,10 @@ node skills/reverse-engineering-saas/scripts/init-kb.mjs --product "Acme CRM" --
 
 ```bash
 node skills/reverse-engineering-saas/scripts/check-kb.mjs re-acme-crm
+```
+
+```bash
+node skills/reverse-engineering-saas/scripts/build-report.mjs re-acme-crm
 ```
 
 ```bash
@@ -111,7 +115,7 @@ flowchart LR
     D --> E[Deep dive<br/>one feature at a time]
     E -->|next feature| E
     E --> F[Synthesis:<br/>PRD, parity, barriers]
-    F --> G[Close and<br/>handoff zip]
+    F --> G[Close:<br/>report and zip]
 ```
 
 | Phase | What happens |
@@ -122,7 +126,7 @@ flowchart LR
 | 4 Map | Every screen and route; stack and design tokens |
 | 5 Deep dive | One feature at a time: fixtures, states, rules, persistence, network, written to disk before the next feature |
 | 6 Synthesis | Data model, design tokens, barriers, PRD, parity tests |
-| 7 Close | Restore what changed, pass `check-kb`, send the handoff zip |
+| 7 Close | Restore what changed, pass `check-kb`, send `REPORT.html` and the handoff zip |
 
 The knowledge base on disk is the agent's only memory, so a study can span many sessions and survive context limits. Every statement carries its evidence: `[obs]` seen in the product, `[net]` captured on the network, `[doc]` from public documentation, `[inf]` an inference with an open question.
 
@@ -138,6 +142,7 @@ The knowledge base on disk is the agent's only memory, so a study can span many 
 | Design | Color, type, spacing, radius, shadow and motion tokens, mapped to the product's CSS variables | `design/` |
 | Production barriers | Integrations that need approval, licenses, certifications, distribution gatekeepers and moats, with severity, market weight, lead time and mitigation | `clone/barriers.md` |
 | Build plan | Requirements, parity tests derived from the rules, what to copy, avoid and improve | `clone/` |
+| Report | `REPORT.html`: one self-contained page a person reads, with images embedded and every ID linked | KB root |
 | Handoff | `BUILD.md`, a brief for any coding agent: read order, rules as tests, what not to copy | zip root |
 
 A rule:
@@ -218,7 +223,7 @@ Yes. Tell it not to ask you anything. It records what needs you under "Needs hum
 <details>
 <summary><strong>How do I give the result to my developers?</strong></summary>
 
-Ask for the handoff, or wait for the end of the study. The agent sends a zip with the knowledge base and `BUILD.md`. Account details (`sandbox/`, `log/`) stay out of the zip, except a copy of the change ledger without object IDs, locations or URLs.
+Ask for the handoff, or wait for the end of the study. The agent sends `REPORT.html` for people and a zip with the knowledge base and `BUILD.md` for coding agents. Account details (`sandbox/`, `log/`) stay out of the zip, except a copy of the change ledger without object IDs, locations or URLs.
 
 </details>
 

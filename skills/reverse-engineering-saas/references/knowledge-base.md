@@ -8,6 +8,7 @@
 re-<product>/
   STATUS.md                 First file every session reads and last file it writes
   BUILD.md                  Build brief for a coding agent (added by pack-kb.mjs)
+  REPORT.html               The report a person reads, generated from the KB (build-report.mjs)
   README.md                 How to read the KB: tags, IDs, tree
   00-charter.md             Goal, scope, priorities, mode, environment level, terms note
   sources.md                SRC-### public sources (docs, API reference, pricing) with dates
@@ -129,7 +130,9 @@ Initialize the KB as its own git repository (`init-kb.mjs --git`), even inside a
 
 ## Handoff
 
-`node <skill>/scripts/pack-kb.mjs <kb>` writes `<kb>-handoff-<date>.zip` next to the KB folder:
+`node <skill>/scripts/pack-kb.mjs <kb>` writes `REPORT.html` in the KB and `<kb>-handoff-<date>.zip` next to the KB folder:
+
+- `REPORT.html` is one self-contained page: summary and numbers, decisions needed, barriers, build plan, features and coverage, screens, components, rules, parity tests, flows, data model, API, design tokens, topics, findings, questions, charter, glossary, sources, and an evidence gallery. Images are embedded and IDs are links; it has no scripts and makes no network requests. `build-report.mjs <kb>` regenerates it alone.
 
 - It runs `check-kb` first and stops on errors (`--force` packs anyway and says so).
 - It adds `BUILD.md` from `templates/handoff/BUILD.md` if the KB has none. Edit it in the KB to add instructions for a specific team.
