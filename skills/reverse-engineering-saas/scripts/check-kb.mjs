@@ -6,7 +6,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 
 const USAGE = 'Usage: node check-kb.mjs <kb-dir> [--closing] [--next]';
-const ID_PATTERN = /\b(FL|SRC|EV|F|S|C|R|E|B|Q|L)-(\d{3})\b/g;
+const ID_PATTERN = /\b(FL|SRC|EV|BR|F|S|C|R|E|B|Q|L)-(\d{3})\b/g;
 const SKIP_DIRS = new Set(['.git', 'node_modules', '_templates']);
 const SCANNED_EXTENSIONS = new Set(['.md', '.mmd', '.ts']);
 const LEDGER_COLUMNS = ['id', 'time', 'class', 'action', 'object', 'location', 'object_id', 'before', 'undo', 'status', 'note'];
@@ -32,7 +32,7 @@ const ROW_ID_FILES = {
   'questions.md': ['Q'],
 };
 // Files whose headings define IDs.
-const HEADING_ID_FILES = { 'findings.md': ['B'], 'questions.md': ['Q'] };
+const HEADING_ID_FILES = { 'findings.md': ['B'], 'questions.md': ['Q'], 'clone/barriers.md': ['BR'] };
 const ARTIFACT_DIRS = ['screens', 'components', 'flows', 'topics'];
 
 const errors = [];
@@ -162,12 +162,18 @@ function checkReferencesAndLinks(kb, files) {
   }
 }
 
-function checkRules(kb, files) {
-  for (const file of files.filter((name) => name.startsWith('rules/') && name.endsWith('.md'))) {
+// Rules and barriers are claims the clone depends on: each section needs evidence.
+function checkEvidenceSections(kb, files) {
+  const targets = [
+    ...files.filter((name) => name.startsWith('rules/') && name.endsWith('.md')).map((file) => [file, 'R']),
+    ...files.filter((name) => name === 'clone/barriers.md').map((file) => [file, 'BR']),
+  ];
+  for (const [file, prefix] of targets) {
     const text = stripIgnored(readFileSync(join(kb, file), 'utf8'));
-    const sections = text.split(/^(?=#{1,6}\s+R-\d{3}\b)/m).filter((section) => /^#{1,6}\s+R-\d{3}/.test(section));
+    const start = new RegExp(`^(?=#{1,6}\\s+${prefix}-\\d{3}\\b)`, 'm');
+    const sections = text.split(start).filter((section) => new RegExp(`^#{1,6}\\s+${prefix}-\\d{3}`).test(section));
     for (const section of sections) {
-      const id = section.match(/R-\d{3}/)[0];
+      const id = section.match(new RegExp(`${prefix}-\\d{3}`))[0];
       if (/\[(obs|net)\s+EV-\d{3}|\[doc\s+SRC-\d{3}/.test(section)) continue;
       if (/\[inf\]/.test(section) && /\bQ-\d{3}\b/.test(section)) warnings.push(`${file}: ${id} rests on inference only`);
       else errors.push(`${file}: ${id} has no evidence tag ([obs EV-###], [net EV-###] or [doc SRC-###])`);
@@ -295,7 +301,7 @@ function nextIds() {
     const [prefix, number] = id.split('-');
     max[prefix] = Math.max(max[prefix] ?? 0, Number(number));
   }
-  return ['F', 'S', 'C', 'FL', 'R', 'E', 'B', 'Q', 'SRC', 'EV', 'L']
+  return ['F', 'S', 'C', 'FL', 'R', 'BR', 'E', 'B', 'Q', 'SRC', 'EV', 'L']
     .map((prefix) => `${prefix}-${String((max[prefix] ?? 0) + 1).padStart(3, '0')}`)
     .join('  ');
 }
@@ -319,7 +325,7 @@ function main() {
   const ledger = checkLedger(kb, closing);
   checkDuplicates();
   checkReferencesAndLinks(kb, files);
-  checkRules(kb, files);
+  checkEvidenceSections(kb, files);
   checkArtifacts(files, kb);
   checkEvidenceIndex(kb, files);
   checkEntities(kb, files);

@@ -9,6 +9,7 @@ Fill `00-charter.md` from the user's request. Decide without asking when the req
 | Goal | Rebuild the product's core loop well enough to replace it for the user's team |
 | Scope | Features the user named, then the core loop (the screens a daily user opens every day) |
 | Depth | Rebuild grade: anatomy, states, rules, data model, API shapes |
+| Clone target market | The user's own country and customer segment; write the assumption |
 | Mode | Unattended if the user said not to ask or will be away; otherwise attended |
 | Environment | Per SKILL.md "Environment levels" |
 | Language | KB prose in the user's language |
@@ -34,6 +35,8 @@ Use web search and web fetch, not the agent's browser. Record each source as `SR
 | Keyboard shortcut page | Full shortcut list |
 | Community, reviews, Reddit | Pain points and missing features (input for "improve") |
 | Security and trust page | Data residency, SSO, audit log, permissions model |
+
+Run the barrier scan in the same pass: integrations list, subprocessors, security page, terms, and the developer docs of each permissioned integration. Record barriers in `clone/barriers.md` (`references/barriers.md`).
 
 Tag every claim from these as `[doc SRC-###]`. A documented behavior still needs observation before it becomes a rule the clone depends on, unless it cannot be observed (then keep `[doc]` and say so).
 
@@ -151,9 +154,10 @@ search, notifications (in-app, email, push: from docs when not observable), perm
 | `design/tokens.md` | Consolidated tokens: color, type, spacing, radius, shadow, motion, z-index, breakpoints |
 | `clone/prd.md` | Product requirements for the clone: scope, users, core loop, feature list with priority, non-goals |
 | `clone/parity.md` | One acceptance test per `R-###` the clone must pass, grouped by feature |
+| `clone/barriers.md` | Every `BR-###` with severity, lead time, cost and mitigation, launch blockers first |
 | `clone/implications.md` | For each area: copy, avoid (problems in `findings.md`), improve |
 
-The PRD states the build order: data model, core loop screens, rules from `parity.md`, then secondary features.
+The PRD states the build order: long lead-time approvals and launch blockers first (they run while the team builds), then data model, core loop screens, rules from `parity.md`, then secondary features.
 
 ### Depth when writes are not allowed
 

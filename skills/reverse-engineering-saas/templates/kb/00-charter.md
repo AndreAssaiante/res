@@ -7,6 +7,7 @@ Date: {{DATE}}
 | Requested by | {{requester}} |
 | Scope | {{scope}} |
 | Out of scope | {{out_of_scope}} |
+| Clone target market | {{country_and_customer_segment}} |
 | Priorities | {{priorities}} |
 | Mode | {{unattended_or_attended}} |
 | Environment level | {{level}} |

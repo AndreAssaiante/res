@@ -35,6 +35,7 @@ re-<product>/
   topics/<topic>.md         Cross-cutting topics (search, notifications, hidden writes)
   clone/
     prd.md                  Requirements for the clone
+    barriers.md             BR-### production barriers: approvals, licenses, certifications, moats
     parity.md               Acceptance tests derived from R-### rules
     implications.md         Copy, avoid, improve
   evidence/EV-###-<slug>.*  Screenshots, script outputs, network shapes
@@ -55,6 +56,7 @@ Take the next free number with `node <skill>/scripts/check-kb.mjs <kb> --next`. 
 | `FL-` | Flow | File `flows/FL-###-*.md` |
 | `R-` | Rule | Heading `### R-###` in `rules/*.md` |
 | `E-` | Entity | File `data-model/entities/E-###-*.md` |
+| `BR-` | Production barrier | Heading `### BR-###` in `clone/barriers.md` |
 | `B-` | Finding | Heading or first cell in `findings.md` |
 | `Q-` | Question | Heading or first cell in `questions.md` |
 | `SRC-` | Public source | First cell in `sources.md` |
@@ -128,7 +130,7 @@ Initialize the KB as its own git repository (`init-kb.mjs --git`), even inside a
 
 `node <skill>/scripts/check-kb.mjs <kb>` reports:
 
-- Errors: unresolved references, duplicate definitions, rules without evidence, invalid ledger rows, `kept` or `incident` rows without a note, missing `STATUS.md`.
+- Errors: unresolved references, duplicate definitions, rules or barriers without evidence, invalid ledger rows, `kept` or `incident` rows without a note, missing `STATUS.md`.
 - Warnings: open ledger rows, `[inf]` lines without `Q-###`, artifact files without a "Not tested" section, entity field rows without an evidence tag, evidence files missing from `evidence/index.csv`, `STATUS.md` older than the newest log, template placeholders left in place.
 
 Add `--closing` at the end of the study: `open`, `fixture` and `human` ledger rows become errors.

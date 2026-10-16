@@ -1,13 +1,13 @@
 ---
 name: reverse-engineering-saas
-description: Use when studying a SaaS web product from the outside in order to rebuild, clone or copy it (ClickUp, Pipedrive, Notion, a CRM, a project tool), when documenting its UX, screens, components, data model, business rules or API through a browser the agent drives, or when an agent must explore a live SaaS account without damaging production data or notifying real people.
+description: Use when studying a SaaS web product from the outside in order to rebuild, clone or copy it (ClickUp, Pipedrive, Notion, a CRM, a project tool), when documenting its UX, screens, components, data model, business rules or API through a browser the agent drives, when assessing what would block a clone from launching (permissioned integrations, regulation, certifications), or when an agent must explore a live SaaS account without damaging production data or notifying real people.
 ---
 
 # Reverse engineering a SaaS product
 
 ## Overview
 
-The output is a knowledge base (KB) on disk from which a team that never used the product can rebuild it. Two rules are absolute:
+The output is a knowledge base (KB) on disk from which a team that never used the product can rebuild it and take it to production. Two rules are absolute:
 
 1. **The exploration never damages the user's production data and never reaches a real person.**
 2. **Every statement in the KB carries its evidence.**
@@ -29,12 +29,12 @@ Do not use this skill when the source code is available (read the code), for nat
 
 | Phase | Output | Browser writes |
 |---|---|---|
-| 1 Charter | `00-charter.md`: goal, scope, priorities, unattended or attended | None |
+| 1 Charter | `00-charter.md`: goal, scope, priorities, clone target market, unattended or attended | None |
 | 2 Environment and preflight | `sandbox/environment.md` | None until the preflight passes |
-| 3 Recon from public sources | `sources.md`, `glossary.md`, seeds of `inventory/features.md` and `data-model/` | None (use web fetch, not the browser) |
+| 3 Recon from public sources | `sources.md`, `glossary.md`, seeds of `inventory/features.md` and `data-model/`, barrier scan in `clone/barriers.md` | None (use web fetch, not the browser) |
 | 4 Map | `inventory/screens.md`, routes, stack, token baseline | A0, A1 |
 | 5 Deep dive, one feature at a time | `screens/`, `components/`, `rules/`, `flows/`, `data-model/`, `api/`, `topics/` | Per the matrix below |
-| 6 Synthesis | `clone/prd.md`, `clone/parity.md`, `clone/implications.md`, `design/tokens.md` | None |
+| 6 Synthesis | `clone/prd.md`, `clone/parity.md`, `clone/barriers.md`, `clone/implications.md`, `design/tokens.md` | None |
 | 7 Close | Updated `STATUS.md`, reconciled ledger, `check-kb` passes | Restore and teardown only |
 
 Details per phase: `references/exploration.md`. KB layout, IDs and formats: `references/knowledge-base.md`.
@@ -52,7 +52,7 @@ Use the highest level available. Record it in `sandbox/environment.md`.
 | L3 Sandbox container | One list, project or pipeline inside production, named `🧪 [RE] Sandbox`, private where the product allows | The agent, when the user asked for a test environment. Creating it is an A2 action with a ledger row. A container the user already designated keeps its name |
 | L4 Observe only | Production, no writes | Default when the user gave no permission to write |
 
-The user asked for a test environment when they say so, or tell you to test or try features ("testa tudo", "try the automations"). A request to look, read or document only is not permission to write: use L4.
+The user asked for a test environment when they say so, or tell you to test or try features ("test everything", "try the automations"), in any language. A request to look, read or document only is not permission to write: use L4.
 
 When the user asked for a test environment and no L1 exists: create L2 if free, otherwise L3, and add "Needs human: dedicated trial account in a separate browser profile (L1)" to `STATUS.md`. If creating a workspace or company starts a subscription or a trial (Pipedrive "Add company", for example), it is A5: use L3.
 
@@ -140,6 +140,18 @@ For each feature, in the order of `inventory/coverage.md`:
 
 Do not start the next feature while findings exist only in context. A finding without evidence goes to `questions.md` as "Confirm: ...", never into a rule.
 
+## Production barriers
+
+A clone that cannot launch is not a clone. Scan for barriers during recon and update them during the deep dive:
+
+- Integrations whose API needs approval, a partner program or a security review.
+- Licenses and authorizations in the clone's target market (payments, banking, health, telecom, invoices), and data protection law.
+- Certifications buyers require (SOC 2, ISO 27001, PCI DSS), and enterprise must-haves (SSO, audit logs).
+- Distribution gatekeepers (app stores, bulk email and SMS rules).
+- What code cannot copy: data, content, network effects, trademarks.
+
+Record each one as `BR-###` in `clone/barriers.md` with category, features blocked, gatekeeper, severity (`blocks launch`, `blocks feature`, `adds lead time`, `adds cost`, `moat`), lead time and cost, mitigation and evidence. Put launch blockers and long approvals first in the PRD build order. This is not legal advice: a legal reading without a source is `[inf]` with a question for counsel. Categories, sources and format: `references/barriers.md`.
+
 ## Evidence tags
 
 | Tag | Meaning |
@@ -149,7 +161,7 @@ Do not start the next feature while findings exist only in context. A finding wi
 | `[doc SRC-004]` | Public documentation listed in `sources.md` |
 | `[inf]` | Inference. The same line must cite the `Q-###` that would confirm it |
 
-Rules and data model fields need `obs`, `net` or `doc`. Every screen, component, flow and topic file ends with a "Not tested" list. Record each evidence file in `evidence/index.csv` (date, session, route, what it shows, masked).
+Rules, barriers and data model fields need `obs`, `net` or `doc`. Every screen, component, flow and topic file ends with a "Not tested" list. Record each evidence file in `evidence/index.csv` (date, session, route, what it shows, masked).
 
 ## Page scripts
 
@@ -194,6 +206,7 @@ Most SaaS terms forbid reverse engineering or using the service to build a compe
 | "I'll remember what I changed" | Ledger row before the next action |
 | "I'll write the docs at the end" | Context ends first. Write after each feature |
 | "The docs say so" | That is `[doc]`, not `[obs]`. Tag it |
+| "It's only screens, we can copy it" | Approvals, licenses and certifications decide whether the clone can launch. Scan barriers |
 | "Opening the editor is read-only" | Many editors autosave. Cancel, reload and check |
 | "I'll rebuild the shared view's old filters from memory" | A guess can make it worse. Ledger `incident`, "Needs human" |
 | "The undo is the polite thing" | Unassigning or deleting can notify the person again. Check first |

@@ -116,6 +116,20 @@ test('human rows need a note, warn during the study and fail with --closing', ()
   assert.equal(result.status, 1);
 });
 
+test('barriers need evidence and are counted as BR IDs', () => {
+  appendFileSync(join(kb, 'clone/barriers.md'), '\n| BR-001 | permissioned integration | blocks feature | F-001 | weeks |\n\n### BR-001 WhatsApp needs business verification\n- Severity: blocks feature\n- Blocks: F-001\n');
+  appendFileSync(join(kb, 'inventory/features.md'), '| F-001 | Notifications | WhatsApp alerts | Business | P2 | | BR-001 | todo | |\n');
+  let result = check();
+  assert.equal(result.status, 1);
+  assert.match(result.stdout, /clone\/barriers\.md: BR-001 has no evidence tag/);
+  appendFileSync(join(kb, 'clone/barriers.md'), '- Evidence: [doc SRC-001]\n');
+  appendFileSync(join(kb, 'sources.md'), '| SRC-001 | WhatsApp Business Platform docs | https://developers.facebook.com/docs/whatsapp | docs | 2026-10-16 | verification |\n');
+  result = check();
+  assert.equal(result.status, 0, result.stdout);
+  assert.match(result.stdout, /BR 1/);
+  assert.match(check('--next').stdout, /BR-002/);
+});
+
 test('entity field rows need an evidence tag', () => {
   write('data-model/entities/E-001-deal.md', '# E-001 Deal\n\n## Fields\n\n| Field | Type | Required | Default | Constraints or enum | Source |\n|---|---|---|---|---|---|\n| title | string | yes | | | [doc SRC-001] |\n| value | number | no | 0 | | |\n\n## Not tested\n- None.\n');
   appendFileSync(join(kb, 'sources.md'), '| SRC-001 | API | https://example.com/api | api | 2026-10-15 | fields |\n');

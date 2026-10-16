@@ -1,15 +1,21 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
-  "name": "reverse-engineering-saas",
-  "description": "Skill for studying a SaaS web product through the browser and building a rebuild-grade knowledge base without touching production data.",
-  "owner": { "name": "Alex Netto", "url": "https://alexnet.to" },
+  "name": "res",
+  "description": "RES: reverse engineer a SaaS web product into a knowledge base for rebuilding it, without touching production data.",
+  "owner": {
+    "name": "Alex Netto",
+    "url": "https://alexnet.to"
+  },
   "plugins": [
     {
-      "name": "reverse-engineering-saas",
-      "description": "Reverse engineer a SaaS product (ClickUp, Pipedrive, any web app) into a knowledge base: screens, components, rules, data model, API shapes and design tokens, with a sandbox protocol, a change ledger and an automated check.",
+      "name": "res",
+      "description": "Study a SaaS product through the browser and document screens, states, business rules, data model, API shapes, design tokens and production barriers, with a sandbox protocol, a change ledger and an automated check.",
       "source": "./",
       "strict": false,
-      "skills": ["./skills/reverse-engineering-saas"]
+      "skills": [
+        "./skills/reverse-engineering-saas"
+      ],
+      "version": "0.1.0"
     }
   ]
 }
