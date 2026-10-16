@@ -7,7 +7,7 @@ description: Use when studying a SaaS web product from the outside in order to r
 
 ## Overview
 
-The output is a knowledge base (KB) on disk from which a team that never used the product can rebuild it and take it to production. Two rules are absolute:
+The output is a knowledge base (KB) on disk from which a team that never used the product can rebuild it and take it to production, delivered at the end as a zip the user can hand to any coding agent. Two rules are absolute:
 
 1. **The exploration never damages the user's production data and never reaches a real person.**
 2. **Every statement in the KB carries its evidence.**
@@ -35,7 +35,7 @@ Do not use this skill when the source code is available (read the code), for nat
 | 4 Map | `inventory/screens.md`, routes, stack, token baseline | A0, A1 |
 | 5 Deep dive, one feature at a time | `screens/`, `components/`, `rules/`, `flows/`, `data-model/`, `api/`, `topics/` | Per the matrix below |
 | 6 Synthesis | `clone/prd.md`, `clone/parity.md`, `clone/barriers.md`, `clone/implications.md`, `design/tokens.md` | None |
-| 7 Close | Updated `STATUS.md`, reconciled ledger, `check-kb` passes | Restore and teardown only |
+| 7 Close | Updated `STATUS.md`, reconciled ledger, `check-kb` passes; at the end of the study, the handoff zip | Restore and teardown only |
 
 Details per phase: `references/exploration.md`. KB layout, IDs and formats: `references/knowledge-base.md`.
 
@@ -184,6 +184,7 @@ Tool-specific notes (saving screenshots, network, profiles, drag and drop): `ref
 3. Write `log/<date>-s<NN>.md`.
 4. Run `node <skill>/scripts/check-kb.mjs <kb>` and fix every error.
 5. At the end of the study only: tear down from the ledger, compare baseline counts, list residuals in `STATUS.md`, then run `check-kb --closing`.
+6. Hand off: run `node <skill>/scripts/pack-kb.mjs <kb>` and send the zip to the user in the chat. Attach it with the agent's file-sending tool when there is one; otherwise give its path. The zip holds the KB and `BUILD.md`, a brief any coding agent can follow, and leaves out `sandbox/` and `log/`. When the user asks for the handoff before the end, pack the KB as it is: `STATUS.md` tells the reader what is missing.
 
 Every ledger row ends the session as `restored`, `removed`, `fixture` (test data left for the next session), `kept` (the user decided to keep it) or `human` (only the user can resolve it; the note says what to do). `--closing` fails on `open`, `fixture` and `human`.
 

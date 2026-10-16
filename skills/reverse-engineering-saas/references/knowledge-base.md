@@ -7,6 +7,7 @@
 ```
 re-<product>/
   STATUS.md                 First file every session reads and last file it writes
+  BUILD.md                  Build brief for a coding agent (added by pack-kb.mjs)
   README.md                 How to read the KB: tags, IDs, tree
   00-charter.md             Goal, scope, priorities, mode, environment level, terms note
   sources.md                SRC-### public sources (docs, API reference, pricing) with dates
@@ -125,6 +126,17 @@ Environment: L3 · Sandbox: 🧪 [RE] Sandbox (space Personal) · Open ledger ro
 ## Git
 
 Initialize the KB as its own git repository (`init-kb.mjs --git`), even inside another repository. Commit after each feature with the feature ID in the message. Masked evidence images are part of the commit.
+
+## Handoff
+
+`node <skill>/scripts/pack-kb.mjs <kb>` writes `<kb>-handoff-<date>.zip` next to the KB folder:
+
+- It runs `check-kb` first and stops on errors (`--force` packs anyway and says so).
+- It adds `BUILD.md` from `templates/handoff/BUILD.md` if the KB has none. Edit it in the KB to add instructions for a specific team.
+- It leaves out `sandbox/` and `log/`, which hold account and workspace details, and `_templates/`. `--full` includes them.
+- `--out <file.zip>` chooses the path.
+
+Send the zip to the user in the chat. The receiver unzips it and gives the folder to a coding agent, starting from `BUILD.md`.
 
 ## Checks
 

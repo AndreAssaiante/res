@@ -23,6 +23,7 @@ One folder per product, `re-<product>/`:
 | Clone | Requirements (PRD), parity tests derived from the rules, what to copy, avoid and improve |
 | Safety | Environment description, preflight results, change ledger, fixtures |
 | Continuity | `STATUS.md`, one log per session, evidence files with dates |
+| Handoff | A zip with the knowledge base and `BUILD.md`, a brief any coding agent can follow to build the clone |
 
 ## Quickstart
 
@@ -56,7 +57,7 @@ Without a trial account, the agent only writes if you ask it to test or to creat
 - "Reverse engineer ClickUp's board and task view. Create a test environment, don't ask me anything."
 - "Continue the ClickUp study." The agent resumes from `STATUS.md`.
 
-The agent creates the knowledge base as `re-<product>/` in its working directory, works through the phases below, and runs `check-kb.mjs` before it stops. Start later sessions from the same directory.
+The agent creates the knowledge base as `re-<product>/` in its working directory, works through the phases below, and runs `check-kb.mjs` before it stops. Start later sessions from the same directory. At the end, the agent sends you `re-<product>-handoff-<date>.zip`: unzip it and give the folder to any coding agent, starting from `BUILD.md`.
 
 ## How it works
 
@@ -132,6 +133,8 @@ A production barrier:
 
 **Does it work for desktop or mobile apps?** Not well. It needs the DOM and the network. For binaries and Electron internals, use [REA](https://github.com/morluto/rea).
 
+**How do I give the result to my developers?** Ask for the handoff. The agent packs the knowledge base into a zip with `BUILD.md`, a brief that tells a coding agent what to read first, how to turn the rules into tests, and what not to copy. Account details stay out of the zip.
+
 **Is copying a product legal?** That depends on the product's terms and your jurisdiction. RES records the relevant terms clause, rebuilds from behavior instead of copying assets, and flags legal questions for counsel. It does not give legal advice.
 
 ## Documentation
@@ -151,7 +154,7 @@ A production barrier:
 
 ## Status
 
-Version 0.1.0. The method was tested with scenario runs on subagents, before and after writing the skill, and the scripts with automated tests. It has not yet been run end to end on a real product, so expect rough edges in the first studies. Reports from real runs are welcome.
+Version 0.2.0. The method was tested with scenario runs on subagents, before and after writing the skill, and the scripts with automated tests. It has not yet been run end to end on a real product, so expect rough edges in the first studies. Reports from real runs are welcome.
 
 How RES compares with [REA](https://github.com/morluto/rea), a technical reverse engineering tool: [docs/comparison-with-rea.md](docs/comparison-with-rea.md).
 
@@ -164,6 +167,7 @@ skills/reverse-engineering-saas/
   templates/             Knowledge base scaffold and artifact templates
   scripts/init-kb.mjs    Creates a knowledge base
   scripts/check-kb.mjs   Validates IDs, references, evidence, ledger and status
+  scripts/pack-kb.mjs    Packs the knowledge base and BUILD.md into a handoff zip
   scripts/page/          Browser scripts: inventory, tokens, api-shapes, mask, annotate
 docs/                    Design decisions, test protocol, comparison with REA
 tests/                   Automated tests for the scripts

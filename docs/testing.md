@@ -17,7 +17,7 @@ npm test
 | File | What it checks |
 |---|---|
 | `tests/page-scripts.test.mjs` | Runs the five page scripts in headless Chromium against `tests/fixture.html` with mocked API and WebSocket traffic. Asserts component tags, routes, token-to-variable mapping, endpoint templates, JSON shapes, GraphQL operations, WebSocket frames, masking, annotation, and that the fake names, emails, IDs and storage values on the test page do not appear in the results |
-| `tests/kb-scripts.test.mjs` | Creates a knowledge base with `init-kb.mjs` and checks the main `check-kb.mjs` rules: unresolved references, rules and barriers without evidence, malformed tags, placeholder IDs, duplicates, broken links, `[inf]` without a question, missing "Not tested" sections, ledger validation, `fixture` and `human` rows, `--closing`, evidence index, entity rows, coverage rows and counts, `--next`, `--help`, the default KB directory, and `--git` with and without a git identity |
+| `tests/kb-scripts.test.mjs` | Creates a knowledge base with `init-kb.mjs` and checks the main `check-kb.mjs` rules: unresolved references, rules and barriers without evidence, malformed tags, placeholder IDs, duplicates, broken links, `[inf]` without a question, missing "Not tested" sections, ledger validation, `fixture` and `human` rows, `--closing`, evidence index, entity rows, coverage rows and counts, `--next`, `--help`, the default KB directory, and `--git` with and without a git identity, and `pack-kb.mjs` (zip validated with Python's `zipfile`, private folders left out, `--full`, `--force`) |
 
 To reuse an existing Playwright install instead of `npm install`, set `PLAYWRIGHT_MODULE=/path/to/node_modules/playwright`.
 

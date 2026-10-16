@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0 (2026-10-16)
+
+- Handoff: `pack-kb.mjs` packs the knowledge base into a zip with `BUILD.md`, a build brief for any coding agent. It checks the KB first, leaves out `sandbox/` and `log/` unless `--full`, and needs no dependencies.
+- The skill ends a study by sending the zip to the user in the chat.
+
 ## 0.1.0 (2026-10-16)
 
 First public release.

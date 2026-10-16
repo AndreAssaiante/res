@@ -215,6 +215,48 @@ test('init-kb defaults to ./re-<product-slug>', () => {
   assert.ok(existsSync(join(dir, 're-acao-crm', 'STATUS.md')));
 });
 
+// Lists and verifies a zip with Python's zipfile, an independent implementation.
+const readZip = (file) => {
+  const code = 'import json,sys,zipfile\nz=zipfile.ZipFile(sys.argv[1])\nprint(json.dumps({"bad": z.testzip(), "names": z.namelist(), "build": z.read([n for n in z.namelist() if n.endswith("/BUILD.md")][0]).decode()}))';
+  const result = spawnSync('python3', ['-c', code, file], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  return JSON.parse(result.stdout);
+};
+
+test('pack-kb writes a valid zip with BUILD.md and without account details', () => {
+  appendFileSync(join(kb, 'sandbox/ledger.csv'), 'L-001,2026-10-16T10:00:00Z,A2,create,task,Sandbox,,,delete,removed,\n');
+  write('log/2026-10-16-s01.md', '# Session s01\n');
+  const out = join(dir, 'handoff.zip');
+  const result = run('pack-kb.mjs', kb, '--out', out);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /Left out: sandbox\/, log\//);
+  assert.ok(existsSync(join(kb, 'BUILD.md')), 'BUILD.md is added to the KB');
+  const zip = readZip(out);
+  assert.equal(zip.bad, null);
+  assert.ok(zip.names.includes('re-acme/BUILD.md'));
+  assert.ok(zip.names.includes('re-acme/clone/prd.md'));
+  assert.ok(zip.names.includes('re-acme/evidence/index.csv'));
+  assert.ok(!zip.names.some((name) => /\/(sandbox|log|_templates)\//.test(name) || name.endsWith('.gitkeep')));
+  assert.match(zip.build, /# Build brief: Acme CRM clone/);
+  assert.doesNotMatch(zip.build, /\{\{/);
+
+  const full = run('pack-kb.mjs', kb, '--out', join(dir, 'full.zip'), '--full');
+  assert.equal(full.status, 0, full.stderr);
+  assert.ok(readZip(join(dir, 'full.zip')).names.includes('re-acme/sandbox/ledger.csv'));
+});
+
+test('pack-kb refuses a KB with errors unless --force', () => {
+  write('rules/a.md', '### R-001 No evidence\n- Given x\n');
+  const refused = run('pack-kb.mjs', kb, '--out', join(dir, 'x.zip'));
+  assert.equal(refused.status, 1);
+  assert.match(refused.stderr, /R-001 has no evidence tag[\s\S]*--force/);
+  assert.ok(!existsSync(join(dir, 'x.zip')));
+  const forced = run('pack-kb.mjs', kb, '--out', join(dir, 'x.zip'), '--force');
+  assert.equal(forced.status, 0);
+  assert.match(forced.stdout, /Packed with --force/);
+  assert.equal(run('pack-kb.mjs', '--help').status, 0);
+});
+
 test('--next prints the next free ID per prefix', () => {
   appendFileSync(join(kb, 'inventory/features.md'), '| F-007 | Deals | Board | Free | P1 | | | todo | |\n');
   write('evidence/EV-012-x.png', 'png');
