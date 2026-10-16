@@ -1,33 +1,44 @@
+<div align="center">
+
 # RES: Reverse Engineering SaaS
+
+### Turn a SaaS product into a build kit your team or your coding agent can ship.
+
+**Study a web product through the browser, document how it works, and hand off everything needed to rebuild and launch it, without touching production data.**
 
 [![test](https://github.com/alextnetto/res/actions/workflows/test.yml/badge.svg)](https://github.com/alextnetto/res/actions/workflows/test.yml)
 [![release](https://img.shields.io/github/v/release/alextnetto/res)](https://github.com/alextnetto/res/releases)
+[![Node.js 22+](https://img.shields.io/badge/Node.js-22%2B-339933?logo=nodedotjs&logoColor=white)](#quick-start)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-An agent skill for studying a SaaS web product (ClickUp, Pipedrive, any web app) through the browser and turning it into a knowledge base your team can use to rebuild the product and take it to production.
+[Quick start](#quick-start) · [How RES works](#how-res-works) · [What you get](#what-you-get) · [Safety model](#safety-model) · [FAQ](#faq) · [Documentation](#documentation)
 
-The agent explores the product in a test environment, records every change it makes, writes what it learns to files with evidence for each statement, and lists what could stop the clone from launching.
+<code>claude plugin marketplace add alextnetto/res</code>
 
-## What you get
+</div>
 
-One folder per product, `re-<product>/`:
+> [!IMPORTANT]
+> RES drives a real browser on accounts you control. Use it only on products you are allowed to study, read the [safety model](#safety-model) before the first run, and prefer a trial account in a separate browser profile.
 
-| Area | Content |
-|---|---|
-| Inventory | Feature tree, screen catalog with URL patterns, a coverage matrix that works as the queue |
-| UX | One file per screen and per component: anatomy, states, interactions, keyboard, accessibility, microcopy |
-| Behavior | Business rules as Given/When/Then with evidence, user flows, cross-cutting topics |
-| Data | Entities with fields, enums and relations, ER diagram, TypeScript types, permissions matrix, API endpoint shapes |
-| Design | Tokens for color, type, spacing, radius, shadow and motion, mapped to the product's CSS variables |
-| Production barriers | Integrations that need approval, licenses, certifications, distribution gatekeepers and moats, with severity, lead time and mitigation |
-| Clone | Requirements (PRD), parity tests derived from the rules, what to copy, avoid and improve |
-| Safety | Environment description, preflight results, change ledger, fixtures |
-| Continuity | `STATUS.md`, one log per session, evidence files with dates |
-| Handoff | A zip with the knowledge base and `BUILD.md`, a brief any coding agent can follow to build the clone |
+<div align="center">
 
-## Quickstart
+<img src="docs/assets/res-hero.png" alt="RES studies a live product in a safe environment, writes a knowledge base with evidence, and hands it off as a zip for any coding agent" width="1200" />
 
-**1. Install.** In a terminal:
+</div>
+
+---
+
+Want to rebuild a product your team relies on, or launch a competitor in your market? Ask your agent to study it with RES. The agent explores the product in a test environment, records every change it makes, and writes what it learns to files: screens and states, business rules with evidence, the data model, API shapes, design tokens, and what could stop the clone from launching, such as integrations that need approval, licenses and certifications.
+
+At the end you get a zip. Unzip it, give the folder to any coding agent, and it starts from `BUILD.md`.
+
+RES is one agent skill with plain Markdown templates and a few dependency-free Node.js scripts. It adds about 130 tokens to every session and about 4,600 when it runs (measured with `claude plugin details`).
+
+## Quick start
+
+### Install
+
+In a terminal:
 
 ```bash
 claude plugin marketplace add alextnetto/res
@@ -39,27 +50,58 @@ claude plugin install res@res
 
 Inside a Claude Code session, the same commands are `/plugin marketplace add alextnetto/res` and `/plugin install res@res`. Start a new session afterwards.
 
-For other agents that read skills from disk, copy the skill folder into the agent's skills directory (`~/.claude/skills/` for Claude Code, for other agents, check where they read skills from):
+For other agents that read skills from disk, copy the skill folder where your agent reads skills:
 
 ```bash
 git clone https://github.com/alextnetto/res.git && mkdir -p ~/.claude/skills && cp -R res/skills/reverse-engineering-saas ~/.claude/skills/
 ```
 
-You also need Node.js 22 or later and an agent that can drive a browser: Claude in Chrome, Playwright MCP or Chrome DevTools MCP.
+You need Node.js 22 or later and an agent that can drive a browser and run JavaScript in the page: Claude in Chrome, Playwright MCP or Chrome DevTools MCP.
 
-**2. Prepare a safe environment (recommended).** Create a trial account of the product with an email you own, log in to it in a separate Chrome profile, and connect your agent's browser tool to that profile ([how](skills/reverse-engineering-saas/references/tools.md#separate-profile-for-l1)).
+### Prepare a safe environment
 
-Without a trial account, the agent only writes if you ask it to test or to create a test environment. Then it creates a separate workspace or a sandbox container. Otherwise it only observes.
+Create a trial account of the product with an email you own, log in to it in a separate Chrome profile, and connect your agent's browser tool to that profile ([how](skills/reverse-engineering-saas/references/tools.md#separate-profile-for-l1)). This is the safest setup: the agent cannot reach your production account even by mistake.
 
-**3. Ask.** In plain language, in any language:
+Without a trial account, the agent writes only if you ask it to test or to create a test environment, and then only inside a separate workspace or a sandbox container. Otherwise it only observes.
 
-- "Study Pipedrive so my team can rebuild it for the Brazilian market. Use the trial profile."
-- "Reverse engineer ClickUp's board and task view. Create a test environment, don't ask me anything."
-- "Continue the ClickUp study." The agent resumes from `STATUS.md`.
+### Ask your agent
 
-The agent creates the knowledge base as `re-<product>/` in its working directory, works through the phases below, and runs `check-kb.mjs` before it stops. Start later sessions from the same directory. At the end, the agent sends you `re-<product>-handoff-<date>.zip`: unzip it and give the folder to any coding agent, starting from `BUILD.md`.
+```text
+Study Pipedrive so my team can rebuild it for the Brazilian market.
+Use the trial profile, and don't ask me anything until you're done.
+```
 
-## How it works
+Replace the product, the market and the scope with your own. The agent creates `re-<product>/` in its working directory, works through the phases below, and sends you `re-<product>-handoff-<date>.zip` when it finishes. To continue later, start a session in the same directory and say "Continue the Pipedrive study."
+
+### Use the scripts directly
+
+The scripts work without an agent, for example to inspect or repackage a knowledge base:
+
+```bash
+node skills/reverse-engineering-saas/scripts/init-kb.mjs --product "Acme CRM" --git
+```
+
+```bash
+node skills/reverse-engineering-saas/scripts/check-kb.mjs re-acme-crm
+```
+
+```bash
+node skills/reverse-engineering-saas/scripts/pack-kb.mjs re-acme-crm
+```
+
+Each script prints its options with `--help`.
+
+### Update
+
+```bash
+claude plugin marketplace update res
+```
+
+```bash
+claude plugin update res@res
+```
+
+## How RES works
 
 ```mermaid
 flowchart LR
@@ -69,31 +111,34 @@ flowchart LR
     D --> E[Deep dive<br/>one feature at a time]
     E -->|next feature| E
     E --> F[Synthesis:<br/>PRD, parity, barriers]
-    F --> G[Close:<br/>restore and check]
+    F --> G[Close and<br/>handoff zip]
 ```
 
 | Phase | What happens |
 |---|---|
 | 1 Charter | Goal, scope, priorities and the clone's target market |
-| 2 Environment | Pick the safest environment; run a preflight for automations, webhooks and integrations that could fire |
+| 2 Environment | Pick the safest environment; check for automations, webhooks and integrations that could fire |
 | 3 Recon | Public docs, API reference, pricing, integrations list and terms, read with web fetch; first barrier scan |
 | 4 Map | Every screen and route; stack and design tokens |
 | 5 Deep dive | One feature at a time: fixtures, states, rules, persistence, network, written to disk before the next feature |
 | 6 Synthesis | Data model, design tokens, barriers, PRD, parity tests |
-| 7 Close | Restore what changed, update `STATUS.md`, pass `check-kb` |
+| 7 Close | Restore what changed, pass `check-kb`, send the handoff zip |
 
-### Safety model
+The knowledge base on disk is the agent's only memory, so a study can span many sessions and survive context limits. Every statement carries its evidence: `[obs]` seen in the product, `[net]` captured on the network, `[doc]` from public documentation, `[inf]` an inference with an open question.
 
-| Level | Environment | What the agent may change |
+## What you get
+
+| Area | What the knowledge base contains | Where |
 |---|---|---|
-| L1 | Trial account in a separate browser profile, created by you | Everything except outbound and irreversible actions (messages, invites, billing, API tokens, accepting terms, connecting integrations) |
-| L2 | New, empty workspace under your login | Test data and configuration inside that workspace |
-| L3 | One sandbox list, project or pipeline inside production | Test data inside the container only |
-| L4 | Production, observe only | Nothing |
-
-At every level the agent never sends messages or invites, never assigns or mentions other people, never touches billing, never creates accounts and never types passwords. It treats autosave, read receipts and persistent view changes as writes. Every change goes to `sandbox/ledger.csv` and is restored or removed at the end. When you ask it not to interrupt you, it writes what needs you under "Needs human" in `STATUS.md` and keeps working on the rest.
-
-### What the entries look like
+| Inventory | Feature tree, screen catalog with URL patterns, a coverage matrix that works as the queue | `inventory/` |
+| UX | Anatomy, states (empty, loading, error, no permission, plan-gated), interactions, keyboard, accessibility, microcopy | `screens/`, `components/` |
+| Behavior | Business rules as Given/When/Then with evidence, user flows, cross-cutting topics | `rules/`, `flows/`, `topics/` |
+| Data | Entities with fields, enums and relations, ER diagram, TypeScript types, permissions matrix | `data-model/` |
+| API | Endpoint templates per user action, with JSON shapes and no values | `api/` |
+| Design | Color, type, spacing, radius, shadow and motion tokens, mapped to the product's CSS variables | `design/` |
+| Production barriers | Integrations that need approval, licenses, certifications, distribution gatekeepers and moats, with severity, market weight, lead time and mitigation | `clone/barriers.md` |
+| Build plan | Requirements, parity tests derived from the rules, what to copy, avoid and improve | `clone/` |
+| Handoff | `BUILD.md`, a brief for any coding agent: read order, rules as tests, what not to copy | zip root |
 
 A rule:
 
@@ -119,59 +164,92 @@ A production barrier:
 - Evidence: [doc SRC-021]
 ```
 
-`[obs ...]` is something the agent saw, `[net ...]` a network capture, `[doc ...]` public documentation, `[inf]` an inference with an open question.
+## Safety model
+
+| Level | Environment | What the agent may change |
+|---|---|---|
+| L1 | Trial account in a separate browser profile, created by you | Everything except outbound and irreversible actions |
+| L2 | New, empty workspace under your login | Test data and configuration inside that workspace |
+| L3 | One sandbox list, project or pipeline inside production | Test data inside the container only |
+| L4 | Production, observe only | Nothing |
+
+- At every level the agent never sends messages or invites, never assigns or mentions other people, never touches billing, never creates accounts and never types passwords.
+- Autosave, read receipts, dismissed banners and persistent view changes count as writes.
+- Before every write it checks the location, the audience, the undo path and the ledger.
+- Every change goes to `sandbox/ledger.csv`. At the end it is restored, removed, or listed for you to resolve.
+- When you ask it not to interrupt you, it writes what needs you under "Needs human" in `STATUS.md` and keeps working on the rest.
+
+The full procedures are in [references/safety.md](skills/reverse-engineering-saas/references/safety.md).
+
+## RES and REA
+
+[REA](https://github.com/morluto/rea) is an open-source reverse engineering toolkit for binaries, Android, Electron, network captures and websites. It answers what a product is built with; RES answers how it works for the user and what it takes to rebuild and launch it. We ran both on ClickUp: [docs/comparison-with-rea.md](docs/comparison-with-rea.md).
 
 ## FAQ
 
-**Will it change my production data?** Only inside a sandbox you allowed. Every change is recorded in a ledger and, at the end, restored, removed, or listed for you to resolve. Without permission to write, it only observes. Messages, invites, mentions of other people and billing actions are forbidden at every level.
+<details>
+<summary><strong>Will it change my production data?</strong></summary>
 
-**Does it need my password?** No. The agent never types passwords or creates accounts. You log in, preferably to a trial account in a separate browser profile.
+Only inside a sandbox you allowed. Every change is recorded in a ledger and, at the end, restored, removed, or listed for you to resolve. Without permission to write, it only observes. Messages, invites, mentions of other people and billing actions are forbidden at every level.
 
-**Which agents and browsers work?** Any agent that reads skills from disk and can drive a browser and run JavaScript in the page. It was written for Claude Code; the method was tested with Claude Code subagents and the page scripts in headless Chromium. Claude in Chrome, Playwright MCP and Chrome DevTools MCP are covered in `references/tools.md`.
+</details>
 
-**Can I leave it running overnight?** Yes. Tell it not to ask you anything. It records what needs you under "Needs human" in `STATUS.md`, keeps working on the rest, and restores what it changed before it stops.
+<details>
+<summary><strong>Does it need my password?</strong></summary>
 
-**Does it work for desktop or mobile apps?** Not well. It needs the DOM and the network. For binaries and Electron internals, use [REA](https://github.com/morluto/rea).
+No. The agent never types passwords or creates accounts. You log in, preferably to a trial account in a separate browser profile.
 
-**How do I give the result to my developers?** Ask for the handoff. The agent packs the knowledge base into a zip with `BUILD.md`, a brief that tells a coding agent what to read first, how to turn the rules into tests, and what not to copy. Account details stay out of the zip.
+</details>
 
-**Is copying a product legal?** That depends on the product's terms and your jurisdiction. RES records the relevant terms clause, rebuilds from behavior instead of copying assets, and flags legal questions for counsel. It does not give legal advice.
+<details>
+<summary><strong>Which agents and browsers work?</strong></summary>
+
+Any agent that reads skills from disk and can drive a browser and run JavaScript in the page. RES was written for Claude Code; the method was tested with Claude Code subagents and the page scripts in headless Chromium. Claude in Chrome, Playwright MCP and Chrome DevTools MCP are covered in [references/tools.md](skills/reverse-engineering-saas/references/tools.md).
+
+</details>
+
+<details>
+<summary><strong>Can I leave it running overnight?</strong></summary>
+
+Yes. Tell it not to ask you anything. It records what needs you under "Needs human" in `STATUS.md`, keeps working on the rest, and restores what it changed before it stops.
+
+</details>
+
+<details>
+<summary><strong>How do I give the result to my developers?</strong></summary>
+
+Ask for the handoff, or wait for the end of the study. The agent sends a zip with the knowledge base and `BUILD.md`. Account details (`sandbox/`, `log/`) stay out of the zip.
+
+</details>
+
+<details>
+<summary><strong>Does it work for desktop or mobile apps?</strong></summary>
+
+Not well. It needs the DOM and the network. For binaries and Electron internals, use [REA](https://github.com/morluto/rea).
+
+</details>
+
+<details>
+<summary><strong>Is copying a product legal?</strong></summary>
+
+That depends on the product's terms and your jurisdiction. RES records the relevant terms clause, rebuilds from behavior instead of copying assets, and flags legal questions for counsel. It does not give legal advice.
+
+</details>
 
 ## Documentation
 
-| Document | For |
-|---|---|
-| [SKILL.md](skills/reverse-engineering-saas/SKILL.md) | The rules the agent follows: phases, safety, evidence, close |
-| [references/safety.md](skills/reverse-engineering-saas/references/safety.md) | Environment setup, preflight, ledger, teardown, incidents |
-| [references/exploration.md](skills/reverse-engineering-saas/references/exploration.md) | Recon, mapping, per-screen checklist, fixtures, rule probing, synthesis |
-| [references/barriers.md](skills/reverse-engineering-saas/references/barriers.md) | Production barriers: categories, sources, format |
-| [references/knowledge-base.md](skills/reverse-engineering-saas/references/knowledge-base.md) | Knowledge base layout, IDs, evidence, checks |
-| [references/extraction.md](skills/reverse-engineering-saas/references/extraction.md) | Page scripts, design tokens, component names, data model, network |
-| [references/tools.md](skills/reverse-engineering-saas/references/tools.md) | Browser tools, separate profiles, window size |
-| [docs/design.md](docs/design.md) | Design decisions and their reasons |
-| [docs/testing.md](docs/testing.md) | How the skill was tested, and how to test changes |
-| [docs/comparison-with-rea.md](docs/comparison-with-rea.md) | RES and REA side by side |
+- [SKILL.md](skills/reverse-engineering-saas/SKILL.md): the rules the agent follows.
+- [Safety](skills/reverse-engineering-saas/references/safety.md): environment setup, preflight, ledger, teardown, incidents.
+- [Exploration](skills/reverse-engineering-saas/references/exploration.md): recon, mapping, per-screen checklist, fixtures, rule probing, synthesis.
+- [Production barriers](skills/reverse-engineering-saas/references/barriers.md): categories, sources, format.
+- [Knowledge base](skills/reverse-engineering-saas/references/knowledge-base.md): layout, IDs, evidence, checks, handoff.
+- [Extraction](skills/reverse-engineering-saas/references/extraction.md): page scripts, design tokens, component names, data model, network.
+- [Browser tools](skills/reverse-engineering-saas/references/tools.md): Claude in Chrome, Playwright MCP, Chrome DevTools MCP, separate profiles.
+- [Design decisions](docs/design.md) and [testing](docs/testing.md): why RES works this way and how it was tested.
 
 ## Status
 
-Version 0.2.0. The method was tested with scenario runs on subagents, before and after writing the skill, and the scripts with automated tests. It has not yet been run end to end on a real product, so expect rough edges in the first studies. Reports from real runs are welcome.
-
-How RES compares with [REA](https://github.com/morluto/rea), a technical reverse engineering tool: [docs/comparison-with-rea.md](docs/comparison-with-rea.md).
-
-## Repository layout
-
-```
-skills/reverse-engineering-saas/
-  SKILL.md               Rules and workflow (what the agent reads first)
-  references/            Safety, exploration method, barriers, KB format, extraction, browser tools
-  templates/             Knowledge base scaffold and artifact templates
-  scripts/init-kb.mjs    Creates a knowledge base
-  scripts/check-kb.mjs   Validates IDs, references, evidence, ledger and status
-  scripts/pack-kb.mjs    Packs the knowledge base and BUILD.md into a handoff zip
-  scripts/page/          Browser scripts: inventory, tokens, api-shapes, mask, annotate
-docs/                    Design decisions, test protocol, comparison with REA
-tests/                   Automated tests for the scripts
-```
+Version 0.2.0. The method was tested with scenario runs on subagents, before and after each change to the skill, and the scripts with automated tests on Node.js 22 and 24. It has not yet been run end to end on a real product. Example studies of ClickUp and Pipedrive are planned. Reports from real runs are welcome: open a [study report](https://github.com/alextnetto/res/issues/new?template=study_report.yml).
 
 ## Responsible use
 
@@ -179,7 +257,7 @@ Use RES only on accounts you own or are authorized to examine. Read the product'
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Reports from real studies are the most useful contribution: open a [study report](https://github.com/alextnetto/res/issues/new?template=study_report.yml). Security problems go through [SECURITY.md](SECURITY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Security problems go through [SECURITY.md](SECURITY.md).
 
 ## License
 
