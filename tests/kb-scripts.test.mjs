@@ -284,13 +284,17 @@ test('build-report writes one self-contained page with linked IDs and escaped co
     assert.match(html, new RegExp(`id="${id}"`), `anchor ${id}`);
   }
   assert.match(html, /<a href="#R-001">R-001<\/a>/);
-  assert.match(html, /<img src="data:image\/png;base64,/);
+  assert.match(html, /background-image:url\("data:image\/png;base64,/);
   assert.equal((html.match(/data:image\/png;base64,/g) || []).length, 1, 'each image is embedded once');
+  assert.match(html, /<span class="pic full p1" role="img"[^>]*style="aspect-ratio:1\/1/, 'pictures keep their size from the file header');
   assert.match(html, /<span class="chip red">blocks launch<\/span> \(until approved\)/);
   assert.match(html, /<span class="chip amber">blocked: drag<\/span>/);
   assert.match(html, /<ul><li>Item<ul><li>Nested item<\/li><\/ul><\/li>/);
   assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
-  assert.doesNotMatch(html, /<script|<link|https?:\/\/[^"]*\.(js|css)/i, 'no scripts or external resources');
+  assert.doesNotMatch(html, /<script[^>]+src|https?:\/\/[^"]*\.js\b/i, 'no external scripts');
+  for (const link of html.match(/<link[^>]*>/g) || []) assert.match(link, /fonts\.(googleapis|gstatic)\.com/, `only Google Fonts: ${link}`);
+  assert.match(html, /id="themeBtn"/, 'theme toggle');
+  assert.doesNotMatch(html.replace(/<style>[\s\S]*?<\/style>/g, ''), /\u2014/, 'no em dashes in the page');
   assert.match(html, /^<!doctype html>\n<!-- AI agents: [^>]*BUILD\.md/, 'agents are told where to read, in the source');
   assert.match(html, /If you are an AI agent<\/h3><p>[^<]*<code>BUILD\.md<\/code>/, 'and on the page');
   const order = [...html.matchAll(/<section id="([^"]+)"/g)].map((match) => match[1]);
@@ -302,6 +306,45 @@ test('build-report writes one self-contained page with linked IDs and escaped co
   const out = join(dir, 'report.zip');
   assert.equal(run('pack-kb.mjs', kb, '--out', out).status, 0);
   assert.ok(readZip(out).names.includes('re-acme/REPORT.html'));
+});
+
+test('build-report draws screens, components, flows and rules as designed views', () => {
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=', 'base64');
+  for (const name of ['EV-001-board.png', 'EV-002-form.png', 'EV-003-toast.png']) writeFileSync(join(kb, 'evidence', name), png);
+  appendFileSync(join(kb, 'evidence/index.csv'), 'EV-001,2026-10-16,s01,/board,"Board, annotated",yes\nEV-002,2026-10-16,s01,/board,Add form,yes\nEV-003,2026-10-16,s01,/board,Toast after save,yes\n');
+  write('screens/S-001-board.md', '# S-001 Board\nFeatures: F-001 · URL: `/board` · Status: done\n\n## Purpose\n\nThe daily queue.\n\n## Anatomy\n\n![Board](../evidence/EV-001-board.png)\n\n| # | Region | Contents | Component | Evidence |\n|---|---|---|---|---|\n| 1 | Toolbar | Add and filter | C-001 | [obs EV-001] |\n\n## States\n\n| State | How to reach it | What it shows | Evidence |\n|---|---|---|---|\n| Empty | No items | Blank column | [obs EV-003] |\n| Error | none | not tested | none |\n\n## Interactions\n\n| Trigger | Result | Evidence |\n|---|---|---|\n| Click add | Form opens | [obs EV-002] |\n');
+  write('components/C-001-add-form.md', '# C-001 Add form\nUsed in: S-001 · Status: done\n\n## Variants\n\n| Variant | Difference | Evidence |\n|---|---|---|\n| Compact | Fewer fields | [obs EV-002] |\n\n## States\n\n| State | Visual change | Evidence |\n|---|---|---|\n| Default | White | [obs EV-002] |\n| Hover | not measured | none |\n\n## Behavior\n\n- Saving closes the form [obs EV-003].\n');
+  write('flows/FL-001-create.md', '# FL-001 Create an item\nUser goal: add work · Features: F-001 · Status: done\n\n## Steps\n\n| # | Screen | User action | System response | Evidence |\n|---|---|---|---|---|\n| 1 | S-001 | Click add | Form opens | [obs EV-002] |\n| 2 | S-001 | Save | Toast | [obs EV-003] |\n| 3 | S-001 | Wait | Nothing | none |\n\n## Branches and errors\n\n| At step | Condition | What happens | Evidence |\n|---|---|---|---|\n| 2 | Title empty | Error under the field | [obs EV-002] |\n\n## Not tested\n\n- Keyboard only.\n');
+  write('rules/board.md', '# Rules: board\n\n### R-001 Saving needs a title\n- Given an empty title\n- When the user saves\n- Then an error shows\n- Evidence: [obs EV-002]\n- Feature: F-001 · Screen: S-001\n');
+  const result = run('build-report.mjs', kb);
+  assert.equal(result.status, 0, result.stderr);
+  const html = readFileSync(join(kb, 'REPORT.html'), 'utf8');
+  assert.equal((html.match(/data:image\/png;base64,/g) || []).length, 3, 'three images, each embedded once although reused');
+  assert.match(html, /<article class="obj screen" id="S-001">/);
+  assert.match(html, /<div class="anat"><figure><div class="shot"><span class="pic full/, 'anatomy image next to its legend');
+  assert.match(html, /<ol class="lg"><li><span class="n">1<\/span><div><b>Toolbar<\/b> <span class="op"><a href="#C-001">C-001<\/a><\/span>/);
+  assert.match(html, /Board, annotated/, 'captions come from evidence/index.csv, quoted commas kept');
+  assert.match(html, /<div class="stt"><b>Empty<\/b>/);
+  assert.match(html, /Not reached:<\/b> Error/);
+  assert.match(html, /<article class="obj comp" id="C-001">/);
+  assert.match(html, /<span class="pill" title="White">Default<\/span><span class="pill off" title="not measured">Hover<\/span>/);
+  assert.match(html, /<ol class="flow"><li class="st"><div class="shot t"><span class="pic thumb/);
+  assert.match(html, /<div class="shot t empty"><span>S-001<\/span><\/div>/, 'a step without a picture shows its screen');
+  assert.equal((html.match(/<li class="st">/g) || []).length, 3);
+  assert.match(html, /<div class="brn"><span class="at">Step 2<\/span>/);
+  assert.match(html, /<article class="rule" id="R-001">[\s\S]*?<dt>Given<\/dt><dd>an empty title<\/dd><dt>When<\/dt>/);
+  const order = [...html.matchAll(/<section id="([^"]+)"/g)].map((match) => match[1]);
+  assert.deepEqual(order.slice(0, 6), ['summary', 'features', 'screens', 'components', 'flows', 'rules']);
+});
+
+test('build-report degrades when screens, flows and images are missing', () => {
+  write('components/C-001-x.md', '# C-001 Bare component\nUsed in: S-009\n');
+  const result = run('build-report.mjs', kb);
+  assert.equal(result.status, 0, result.stderr);
+  const html = readFileSync(join(kb, 'REPORT.html'), 'utf8');
+  assert.match(html, /No screenshot in the evidence/);
+  assert.doesNotMatch(html, /<section id="flows"/);
+  assert.doesNotMatch(html, /<section id="screens"/);
 });
 
 test('pack-kb refuses a KB with errors unless --force', () => {

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 (2026-10-17)
+
+- `REPORT.html` redesigned as a UX study a person can read and navigate: IBM Plex type, a light and a dark theme with a toggle, a one-line answer with the key findings, stat tiles, section chips, and screenshots in framed figures that enlarge on click.
+- Screens: anatomy screenshot beside a numbered legend linked to the components, a gallery of the screen's evidence, the states seen and the states not reached.
+- Components: one card per component with a screenshot, variants and states as pills (solid when seen, dashed when not), and behavior notes.
+- User flows: a strip of numbered step cards with arrows, a screenshot per step when the step cites one, the user action and the product's response; branches and untested paths below.
+- Rules as Given/When/Then cards grouped by file; color swatches in the design system; an evidence gallery.
+- Each image is embedded once and reused, so a screenshot cited by a screen, a component and a flow step adds no size. The page still builds when screenshots, screens or flows are missing.
+
 ## 0.3.1 (2026-10-16)
 
 - `REPORT.html` redesigned for reading: a header with the product and study status, a notice that the page is for people and that AI agents should read `BUILD.md` (also as a comment at the top of the source), numbered sections in reading order (overview, product, screens, flows, rules, data, API, design, build plan, then what to prepare before launch), a coverage bar, rules and barriers as cards, IDs as badges.

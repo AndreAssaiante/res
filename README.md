@@ -265,7 +265,7 @@ That depends on the product's terms and your jurisdiction. RES records the relev
 
 ## Status
 
-Version 0.3.1. The method was tested with scenario runs on subagents, before and after each change to the skill, and the scripts with automated tests on Node.js 22 and 24. Two end-to-end studies on real products (ClickUp at L2, Pipedrive at L3) are in [examples/](examples/). Version 0.3.0 fixes the gaps the Pipedrive study found; the ClickUp study's are tracked in [an issue](https://github.com/alextnetto/res/issues/5). Reports from real runs are welcome: open a [study report](https://github.com/alextnetto/res/issues/new?template=study_report.yml).
+Version 0.4.0. The method was tested with scenario runs on subagents, before and after each change to the skill, and the scripts with automated tests on Node.js 22 and 24. Two end-to-end studies on real products (ClickUp at L2, Pipedrive at L3) are in [examples/](examples/). Version 0.3.0 fixes the gaps the Pipedrive study found; the ClickUp study's are tracked in [an issue](https://github.com/alextnetto/res/issues/5). Reports from real runs are welcome: open a [study report](https://github.com/alextnetto/res/issues/new?template=study_report.yml).
 
 ## Responsible use
 
